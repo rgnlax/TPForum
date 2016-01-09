@@ -8,10 +8,7 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public interface UserDAO {
-    int getCount();
-
-    void truncateTable();
+public interface UserDAO extends BaseDAO {
 
     UserDataSet create(String jsonString);
 

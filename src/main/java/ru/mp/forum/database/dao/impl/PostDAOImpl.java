@@ -2,6 +2,7 @@ package ru.mp.forum.database.dao.impl;
 
 import ru.mp.forum.database.dao.PostDAO;
 import ru.mp.forum.database.data.PostDataSet;
+import ru.mp.forum.database.executor.TExecutor;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -9,21 +10,11 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public class PostDAOImpl implements PostDAO {
-    private final Connection connection;
+public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
     public PostDAOImpl(Connection connection) {
+        this.tableName = "Post";
         this.connection = connection;
-    }
-
-    @Override
-    public int getCount() {
-        return 0;
-    }
-
-    @Override
-    public void truncateTable() {
-
     }
 
     @Override

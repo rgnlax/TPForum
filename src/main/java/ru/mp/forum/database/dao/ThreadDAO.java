@@ -8,10 +8,7 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public interface ThreadDAO {
-    int getCount();
-
-    void truncateTable();
+public interface ThreadDAO extends BaseDAO {
 
     ThreadDataSet create(String jsonString);
 

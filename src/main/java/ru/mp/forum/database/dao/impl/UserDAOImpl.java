@@ -3,6 +3,7 @@ package ru.mp.forum.database.dao.impl;
 import ru.mp.forum.database.dao.UserDAO;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.UserDataSet;
+import ru.mp.forum.database.executor.TExecutor;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -10,21 +11,11 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public class UserDAOImpl implements UserDAO {
-    private final Connection connection;
+public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
 
     public UserDAOImpl(Connection connection) {
+        this.tableName = "User";
         this.connection = connection;
-    }
-
-    @Override
-    public int getCount() {
-        return 0;
-    }
-
-    @Override
-    public void truncateTable() {
-
     }
 
     @Override

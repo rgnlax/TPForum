@@ -10,11 +10,7 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
 */
-public interface ForumDAO {
-    int getCount();
-
-    void truncateTable();
-
+public interface ForumDAO extends  BaseDAO {
     ForumDataSet create(String jsonString);
 
     ForumDataSet details(String forum, String[] related);

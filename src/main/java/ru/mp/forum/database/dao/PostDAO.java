@@ -7,10 +7,7 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public interface PostDAO {
-    int getCount();
-
-    void truncateTable();
+public interface PostDAO extends  BaseDAO {
 
     int getCount(int threadId);
 

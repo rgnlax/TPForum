@@ -1,30 +1,36 @@
 package ru.mp.forum.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
-import java.sql.Connection;
+import ru.mp.forum.controllers.response.RestResponse;
+import ru.mp.forum.database.dao.MainDAO;
+import ru.mp.forum.database.dao.impl.MainDAOImpl;
 
 /**
  * Created by maksim on 08.01.16.
  */
 @RestController
 @RequestMapping(value = "/db/api")
-public class MainController {
-    @Autowired
-    private Connection connection;
+public class MainController extends BaseRestController {
+    private MainDAO mainDAO;
 
-    @PostConstruct
+    @Override
     void init() {
-        //TODO
+        super.init();
+
+        mainDAO = new MainDAOImpl(con);
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.GET)
-    public String status(){
-        return null;
+    public RestResponse status() {
+        return new RestResponse(mainDAO.getCount());
+    }
+
+    @RequestMapping(value = "/clear", method = RequestMethod.POST)
+    public RestResponse clear() {
+        mainDAO.truncateAll();
+        return new RestResponse("OK");
     }
 
 }

@@ -3,6 +3,7 @@ package ru.mp.forum.database.dao.impl;
 import ru.mp.forum.database.dao.ThreadDAO;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.ThreadDataSet;
+import ru.mp.forum.database.executor.TExecutor;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -10,21 +11,11 @@ import java.util.ArrayList;
 /**
  * Created by maksim on 08.01.16.
  */
-public class ThreadDAOImpl implements ThreadDAO {
-    private final Connection connection;
+public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     public ThreadDAOImpl(Connection connection) {
+        this.tableName = "Thread";
         this.connection = connection;
-    }
-
-    @Override
-    public int getCount() {
-        return 0;
-    }
-
-    @Override
-    public void truncateTable() {
-
     }
 
     @Override
