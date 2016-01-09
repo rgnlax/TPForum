@@ -17,7 +17,7 @@ public interface UserDAO extends BaseDAO {
 
     ReplyTuple follow(String data);
 
-    void unfollow(String follower, String followee);
+    ReplyTuple unfollow(String data);
 
     ArrayList<UserDataSet> listFollowers(String email, Integer limit, String order, Integer sinceId);
 

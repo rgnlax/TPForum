@@ -7,7 +7,6 @@ import ru.mp.forum.database.dao.UserDAO;
 import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.UserDataSet;
-import ru.mp.forum.database.executor.TExecutor;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
             String about = object.get("about").getAsString();
             boolean isAnonymous = !object.has("isAnonymous") ? false : object.get("isAnonymous").getAsBoolean();
 
-            user = new UserDataSet(email, 0 ,username, name, about, isAnonymous);
+            user = new UserDataSet(email, 0, username, name, about, isAnonymous);
 
             String query = "INSERT INTO " + tableName + " (username, about, name, email, isAnonymous) VALUES (?,?,?,?,?)";
 
@@ -59,7 +58,6 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);
         }
-
         return new ReplyTuple(Status.OK, user);
     }
 
@@ -114,9 +112,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                     preparedStatement.execute();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
-                return new ReplyTuple(Status.ALREADY_EXIST);
-
+                return handeSQLException(e);
             }
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);
@@ -125,8 +121,27 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public void unfollow(String follower, String followee) {
+    public ReplyTuple unfollow(String data) {
+        String follower;
+        try {
+            JsonObject object = new JsonParser().parse(data).getAsJsonObject();
+            follower = object.get("follower").getAsString();
+            String followee = object.get("followee").getAsString();
 
+            try {
+                String query = "DELETE FROM User_followers WHERE user_email=? AND followee_email=?";
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, follower);
+                    preparedStatement.setString(2, followee);
+                    preparedStatement.execute();
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new ReplyTuple(Status.INVALID_REQUEST);
+        }
+        return new ReplyTuple(Status.OK, details(follower).getObject());
     }
 
     @Override

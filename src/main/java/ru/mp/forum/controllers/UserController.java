@@ -42,4 +42,11 @@ public class UserController extends BaseRestController {
         return new RestResponse(reply);
     }
 
+    @RequestMapping(value = "/unfollow", method = RequestMethod.POST)
+    public RestResponse unfollow(@RequestBody String data) {
+        ReplyTuple reply = userDAO.unfollow(data);
+        return new RestResponse(reply);
+    }
+
+
 }
