@@ -1,12 +1,14 @@
 package ru.mp.forum.controllers.response;
 
+import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+
 import java.util.Map;
 
 /**
  * Created by maksim on 09.01.16.
  */
 public class RestResponse {
-    private int code = 0;
+    private int code = Status.OK;
     private Object response;
 
     /**
@@ -33,6 +35,17 @@ public class RestResponse {
         this.response = response;
     }
 
+    /**
+     * To make error response
+     */
+    public RestResponse(int code) {
+        this.code = code;
+    }
+
+    public RestResponse (ReplyTuple reply) {
+        this.code = reply.getCode();
+        this.response = reply.getObject();
+    }
 
     public int getCode() {
         return code;

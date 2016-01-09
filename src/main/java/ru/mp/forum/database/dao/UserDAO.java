@@ -1,5 +1,6 @@
 package ru.mp.forum.database.dao;
 
+import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.UserDataSet;
 
@@ -10,11 +11,11 @@ import java.util.ArrayList;
  */
 public interface UserDAO extends BaseDAO {
 
-    UserDataSet create(String jsonString);
+    ReplyTuple create(String jsonString);
 
-    UserDataSet details(String email);
+    ReplyTuple details(String email);
 
-    void follow(String follower, String followee);
+    ReplyTuple follow(String data);
 
     void unfollow(String follower, String followee);
 
