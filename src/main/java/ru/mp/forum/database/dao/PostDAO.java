@@ -1,30 +1,25 @@
 package ru.mp.forum.database.dao;
 
-import ru.mp.forum.database.data.PostDataSet;
-
-import java.util.ArrayList;
+import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
 
 /**
  * Created by maksim on 08.01.16.
  */
 public interface PostDAO extends  BaseDAO {
+    ReplyTuple create(String jsonString);
 
-    int getCount(int threadId);
+    ReplyTuple details(int postId, String[] related);
 
-    PostDataSet create(String jsonString);
+    ReplyTuple listForumPosts(String forum, String since, Integer limit, String order);
 
-    PostDataSet details(int postId, String[] related);
+    ReplyTuple listThreadPosts(int threadId, String since, Integer limit, String order);
 
-    ArrayList<PostDataSet> listForumPosts(String forum, String since, Integer limit, String order);
+    ReplyTuple remove(String jsonString);
 
-    ArrayList<PostDataSet> listThreadPosts(int threadId, String since, Integer limit, String order);
+    ReplyTuple restore(String jsonString);
 
-    String remove(String jsonString);
+    ReplyTuple update(String jsonString);
 
-    String restore(String jsonString);
-
-    PostDataSet update(String jsonString);
-
-    String vote(String jsonString);
+    ReplyTuple vote(String jsonString);
 }
 

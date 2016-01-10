@@ -44,7 +44,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             String message = object.get("message").getAsString();
             String slug = object.get("slug").getAsString();
             boolean isClosed = object.get("isClosed").getAsBoolean();
-            boolean isDeleted = object.has("isDeleted") ? object.get("isDeleted").getAsBoolean() : false;
+            boolean isDeleted = object.has("getIsDeleted") ? object.get("getIsDeleted").getAsBoolean() : false;
 
             thread = new ThreadDataSet(0, title,date,message,slug,forum,user,0,0,0,isDeleted,isClosed);
 
@@ -135,7 +135,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                     stmt.setInt(1, thread);
                     stmt.execute();
                 }
-                query = "UPDATE Post SET idDeleted = 1 WHERE thread_id = ?";
+                query = "UPDATE Post SET isDeleted = 1 WHERE thread_id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -161,7 +161,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                     stmt.setInt(1, thread);
                     stmt.execute();
                 }
-                query = "UPDATE Post SET idDeleted = 0 WHERE thread_id = ?";
+                query = "UPDATE Post SET isDeleted = 0 WHERE thread_id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();

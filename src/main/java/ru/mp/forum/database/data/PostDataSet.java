@@ -1,39 +1,63 @@
 package ru.mp.forum.database.data;
 
+import java.sql.ResultSet;
+
 /**
  * Created by maksim on 08.01.16.
  */
 public class PostDataSet {
-    private final int id;
+    private int id;
     private final String date;
-    private final int threadID;
-    private final String forumShortName;
-    private final String userEmail;
+    private Object thread;
+    private Object forum;
+    private Object user;
     private final String message;
-    private final int parentID;
+    private final int parent;
     private final boolean isEdited;
     private final boolean isApproved;
     private final boolean isHighlighted;
     private final boolean isSpam;
+    private final boolean isDeleted;
     private final int likes;
     private final int dislikes;
     private final int points;
 
-    public PostDataSet(int id, String date, int threadID, String forumShortName, String userEmail, String message, int parentID, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, int likes, int dislikes, int points) {
+    public PostDataSet(int id, String date, int thread, String forum, String user, String message, int parent, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, boolean isDeleted, int likes, int dislikes, int points) {
         this.id = id;
         this.date = date;
-        this.threadID = threadID;
-        this.forumShortName = forumShortName;
-        this.userEmail = userEmail;
+        this.thread = thread;
+        this.forum = forum;
+        this.user = user;
         this.message = message;
-        this.parentID = parentID;
+        this.parent = parent;
         this.isEdited = isEdited;
         this.isApproved = isApproved;
         this.isHighlighted = isHighlighted;
+        this.isDeleted = isDeleted;
         this.isSpam = isSpam;
         this.likes = likes;
         this.dislikes = dislikes;
         this.points = points;
+    }
+
+    public PostDataSet(ResultSet resultSet) throws Exception {
+        this (
+                resultSet.getInt("id"),
+                resultSet.getString("date"),
+                resultSet.getInt("thread_id"),
+                resultSet.getString("forum_short_name"),
+                resultSet.getString("user_email"),
+                resultSet.getString("message"),
+                resultSet.getInt("parent_id"),
+                resultSet.getBoolean("isEdited"),
+                resultSet.getBoolean("isApproved"),
+                resultSet.getBoolean("isHighlighted"),
+                resultSet.getBoolean("isSpam"),
+                resultSet.getBoolean("isDeleted"),
+                resultSet.getInt("likes"),
+                resultSet.getInt("dislikes"),
+                resultSet.getInt("points")
+        );
     }
 
 
@@ -45,36 +69,40 @@ public class PostDataSet {
         return date;
     }
 
-    public int getThreadID() {
-        return threadID;
+    public Object getThread() {
+        return thread;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public Object getUser() {
+        return user;
     }
 
     public String getMessage() {
         return message;
     }
 
-    public int getParentID() {
-        return parentID;
+    public int getParent() {
+        return parent;
     }
 
-    public boolean isEdited() {
+    public boolean getIsEdited() {
         return isEdited;
     }
 
-    public boolean isApproved() {
+    public boolean getIsApproved() {
         return isApproved;
     }
 
-    public boolean isHighlighted() {
+    public boolean getIsHighlighted() {
         return isHighlighted;
     }
 
-    public boolean isSpam() {
+    public boolean getIsSpam() {
         return isSpam;
+    }
+
+    public boolean getIsDeleted() {
+        return isDeleted;
     }
 
     public int getLikes() {
@@ -87,5 +115,21 @@ public class PostDataSet {
 
     public int getPoints() { return points; }
 
-    public String getForumShortName() { return forumShortName; }
+    public Object getForum() { return forum; }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setThread(Object thread) {
+        this.thread = thread;
+    }
+
+    public void setForum(Object forum) {
+        this.forum = forum;
+    }
+
+    public void setUser(Object user) {
+        this.user = user;
+    }
 }
