@@ -1,11 +1,6 @@
 package ru.mp.forum.database.data;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 /**
  * Created by maksim on 08.01.16.
@@ -19,7 +14,7 @@ public class UserDataSet {
     private final boolean isAnonymous;
     private String[] followers;
     private String[] following;
-    private String[] subscriptions;
+    private Integer[] subscriptions;
 
     public UserDataSet(String email, int id, String username, String name, String about, boolean isAnonymous) {
         this.email = email;
@@ -28,6 +23,10 @@ public class UserDataSet {
         this.name = name;
         this.about = about;
         this.isAnonymous = isAnonymous;
+        this.followers = new String[]{};
+        this.following = new String[]{};
+        this.subscriptions = new Integer[]{};
+
     }
 
     public UserDataSet(String email, int id, String username, String name, String about, boolean isAnonymous, String followers, String following, String subscriptions) {
@@ -40,12 +39,22 @@ public class UserDataSet {
 
         if (followers != null) {
             this.followers = followers.split(",");
+        } else {
+            this.followers = new String[]{};
         }
         if (following != null) {
             this.following = following.split(",");
+        } else {
+            this.following = new String[]{};
         }
         if (subscriptions != null) {
-            this.subscriptions = subscriptions.split(",");
+            String[] subs = subscriptions.split(",");
+            this.subscriptions = new Integer[subs.length];
+            for (int i=0; i < subs.length; i++) {
+                this.subscriptions[i] = Integer.parseInt(subs[i]);
+            }
+        } else {
+            this.subscriptions = new Integer[]{};
         }
     }
 
@@ -59,7 +68,7 @@ public class UserDataSet {
                     resultSet.getBoolean("isAnonymous"),
                     resultSet.getString("followers"),
                     resultSet.getString("following"),
-                    null
+                    resultSet.getString("subscriptions")
             );
     }
 
@@ -79,11 +88,11 @@ public class UserDataSet {
         this.following = following;
     }
 
-    public String[] getSubscriptions() {
+    public Integer[] getSubscriptions() {
         return subscriptions;
     }
 
-    public void setSubscriptions(String[] subscriptions) {
+    public void setSubscriptions(Integer[] subscriptions) {
         this.subscriptions = subscriptions;
     }
 

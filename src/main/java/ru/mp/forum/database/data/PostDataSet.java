@@ -7,12 +7,12 @@ import java.sql.ResultSet;
  */
 public class PostDataSet {
     private int id;
-    private final String date;
+    private String date;
     private Object thread;
     private Object forum;
     private Object user;
     private final String message;
-    private final int parent;
+    private final Integer parent;
     private final boolean isEdited;
     private final boolean isApproved;
     private final boolean isHighlighted;
@@ -22,7 +22,7 @@ public class PostDataSet {
     private final int dislikes;
     private final int points;
 
-    public PostDataSet(int id, String date, int thread, String forum, String user, String message, int parent, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, boolean isDeleted, int likes, int dislikes, int points) {
+    public PostDataSet(int id, String date, int thread, String forum, String user, String message, Integer parent, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, boolean isDeleted, int likes, int dislikes, int points) {
         this.id = id;
         this.date = date;
         this.thread = thread;
@@ -48,7 +48,7 @@ public class PostDataSet {
                 resultSet.getString("forum_short_name"),
                 resultSet.getString("user_email"),
                 resultSet.getString("message"),
-                resultSet.getInt("parent_id"),
+                resultSet.getInt("m_path"),
                 resultSet.getBoolean("isEdited"),
                 resultSet.getBoolean("isApproved"),
                 resultSet.getBoolean("isHighlighted"),
@@ -81,7 +81,7 @@ public class PostDataSet {
         return message;
     }
 
-    public int getParent() {
+    public Integer getParent() {
         return parent;
     }
 
@@ -131,5 +131,9 @@ public class PostDataSet {
 
     public void setUser(Object user) {
         this.user = user;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 }

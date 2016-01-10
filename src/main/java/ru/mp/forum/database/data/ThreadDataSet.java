@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 public class ThreadDataSet {
     private int id;
     private final String title;
-    private final String date;
+    private String date;
     private final String message;
     private final String slug;
     private Object forum;
@@ -18,8 +18,9 @@ public class ThreadDataSet {
     private final int dislikes;
     private final boolean isDeleted;
     private final boolean isClosed;
+    private int posts;
 
-    public ThreadDataSet(int id, String title, String date, String message, String slug, String forum, String user, int points, int likes, int dislikes, boolean isDeleted, boolean isClosed) {
+    public ThreadDataSet(int id, String title, String date, String message, String slug, String forum, String user, int points, int likes, int dislikes, boolean isDeleted, boolean isClosed, int posts) {
         this.id = id;
         this.title = title;
         this.date = date;
@@ -32,6 +33,7 @@ public class ThreadDataSet {
         this.dislikes = dislikes;
         this.isDeleted = isDeleted;
         this.isClosed = isClosed;
+        this.posts = posts;
     }
 
     public ThreadDataSet(ResultSet resultSet) throws Exception {
@@ -47,7 +49,8 @@ public class ThreadDataSet {
                 resultSet.getInt("likes"),
                 resultSet.getInt("dislikes"),
                 resultSet.getBoolean("isDeleted"),
-                resultSet.getBoolean("isClosed")
+                resultSet.getBoolean("isClosed"),
+                resultSet.getInt("posts")
         );
     }
 
@@ -107,5 +110,17 @@ public class ThreadDataSet {
 
     public void setUser(Object user) {
         this.user = user;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public int getPosts() {
+        return posts;
+    }
+
+    public void setPosts(int posts) {
+        this.posts = posts;
     }
 }

@@ -1,8 +1,5 @@
 package ru.mp.forum.database.dao.impl.reply;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-
-import java.util.Objects;
 
 /**
  * Created by maksim on 09.01.16.
@@ -26,5 +23,6 @@ public class ReplyTuple {
 
     public ReplyTuple(Integer code) {
         this.code = code;
+        this.object = "";
     }
 }

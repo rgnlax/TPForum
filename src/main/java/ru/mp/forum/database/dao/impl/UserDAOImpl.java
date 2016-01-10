@@ -27,10 +27,10 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
-            String username = object.get("username").getAsString();
-            String email = object.get("email").getAsString();
-            String name = object.get("name").getAsString();
-            String about = object.get("about").getAsString();
+            String username = object.get("username").isJsonNull() ? null : object.get("username").getAsString();
+            String email = object.get("email").isJsonNull() ? null : object.get("email").getAsString();
+            String name = object.get("name").isJsonNull() ? null : object.get("name").getAsString();
+            String about = object.get("about").isJsonNull() ? null : object.get("about").getAsString();
             boolean isAnonymous = !object.has("isAnonymous") ? false : object.get("isAnonymous").getAsBoolean();
 
             user = new UserDataSet(email, 0, username, name, about, isAnonymous);
@@ -51,7 +51,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                     user.setId(resultSet.getInt(1));
                 }
             } catch (SQLException e) {
-                handeSQLException(e);
+                return handeSQLException(e);
             }
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);
@@ -63,13 +63,24 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     public ReplyTuple details(String email) {
         UserDataSet user;
         String query = "SELECT * FROM User as u\n" +
-                "LEFT JOIN (SELECT user_email, group_concat(followee_email) as following FROM User_followers WHERE user_email = ?) t ON u.email = t.user_email\n" +
-                "LEFT JOIN (SELECT followee_email, group_concat(user_email) as followers FROM User_followers WHERE followee_email = ?) s ON u.email = s.followee_email\n" +
+                "LEFT JOIN (\n" +
+                "SELECT user_email, group_concat(followee_email) as following \n" +
+                "FROM User_followers \n" +
+                "WHERE user_email = ?) t ON u.email = t.user_email\n" +
+                "LEFT JOIN (\n" +
+                "SELECT followee_email, group_concat(user_email) as followers \n" +
+                "FROM User_followers \n" +
+                "WHERE followee_email = ?) s ON u.email = s.followee_email\n" +
+                "LEFT JOIN (\n" +
+                "SELECT user_email, group_concat(thread_id) as subscriptions\n" +
+                "    FROM User_subscribes\n" +
+                "    WHERE user_email = ?) d on u.email = d.user_email\n" +
                 "WHERE email=?";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, email);
             stmt.setString(2, email);
             stmt.setString(3, email);
+            stmt.setString(4, email);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 resultSet.next();
 
@@ -82,7 +93,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                         resultSet.getBoolean("isAnonymous"),
                         resultSet.getString("followers"),
                         resultSet.getString("following"),
-                        null
+                        resultSet.getString("subscriptions")
                 );
 
             } catch (Exception e) {
@@ -147,11 +158,11 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
         ArrayList<UserDataSet> followers = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following\n" );
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscriptions\n" );
             query.append("from User_followers as UF\n");
             query.append("join User as U on U.email=UF.user_email\n");
             query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
-            query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
+            query.append("left join User_subscriptions as JUS on JUS.user_email = U.email\n");
             query.append("where UF.followee_email = ?");
 
 
@@ -203,11 +214,12 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
         ArrayList<UserDataSet> followers = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following\n" );
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscriptions\n" );
             query.append("from User_followers as UF\n");
             query.append("join User as U on U.email=UF.followee_email\n");
             query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
             query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
+            query.append("left join User_subscriptions as JUS on JUS.user_email = U.email\n");
             query.append("where UF.user_email = ?");
 
 

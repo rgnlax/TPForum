@@ -46,7 +46,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             boolean isClosed = object.get("isClosed").getAsBoolean();
             boolean isDeleted = object.has("getIsDeleted") ? object.get("getIsDeleted").getAsBoolean() : false;
 
-            thread = new ThreadDataSet(0, title,date,message,slug,forum,user,0,0,0,isDeleted,isClosed);
+            thread = new ThreadDataSet(0, title,date,message,slug,forum,user,0,0,0,isDeleted,isClosed,0);
 
             String query = "INSERT INTO Thread (forum_short_name, title, isClosed, user_email, date, message, slug, isDeleted) VALUES (?,?,?,?,?,?,?,?);";
             try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
@@ -78,7 +78,9 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     public ReplyTuple details(int threadId, String[] related) {
         ThreadDataSet thread;
         try {
-            String query = "SELECT * FROM Thread WHERE id = ?";
+            String query = "SELECT Thread.*, count(Post.id) as posts FROM Thread \n" +
+                    "LEFT JOIN Post on Post.thread_id = Thread.id\n" +
+                    "WHERE Thread.id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, threadId);
 
@@ -86,6 +88,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                     resultSet.next();
 
                     thread = new ThreadDataSet(resultSet);
+                    thread.setDate(thread.getDate().substring(0, thread.getDate().length()-2));
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -218,6 +221,12 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 return handeSQLException(e);
+            }
+            query = "UPDATE Thread SET points=likes-dislikes WHERE id=?";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setInt(1, thread);
+
+                stmt.executeUpdate();
             }
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);

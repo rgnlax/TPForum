@@ -35,7 +35,16 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
             String user = object.get("user").getAsString();
             String message = object.get("message").getAsString();
             String date = object.get("date").getAsString();
-            Integer parent = object.has("parent") ? object.get("parent").getAsInt() : -1;
+            Integer parent;
+            if (object.has("parent")) {
+                if (object.get("parent").isJsonNull()) {
+                    parent = null;
+                } else {
+                    parent = object.get("parent").getAsInt();
+                }
+            } else {
+                parent = null;
+            }
             boolean isApproved = object.has("isApproved") ? object.get("isApproved").getAsBoolean() : false;
             boolean isEdited = object.has("isEdited") ? object.get("isEdited").getAsBoolean() : false;
             boolean isHighlighted = object.has("isHighlighted") ? object.get("isHighlighted").getAsBoolean() : false;
@@ -44,14 +53,14 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             post = new PostDataSet(0,date,thread,forum,user,message,parent,isEdited,isApproved,isHighlighted,isSpam,isDeleted,0,0,0);
 
-            String query = "INSERT INTO Post (date, thread_id, forum_short_name, user_email, message, parent_id, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes, points)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+            String query = "INSERT INTO Post (date, thread_id, forum_short_name, user_email, message, m_path, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes, points)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
             try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, post.getDate());
                 stmt.setInt(2, thread);
                 stmt.setString(3, post.getForum().toString());
                 stmt.setString(4, post.getUser().toString());
                 stmt.setString(5, post.getMessage());
-                stmt.setInt(6, post.getParent());
+                stmt.setObject(6, post.getParent());
                 stmt.setBoolean(7, post.getIsEdited());
                 stmt.setBoolean(8, post.getIsApproved());
                 stmt.setBoolean(9, post.getIsHighlighted());
@@ -87,6 +96,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                     resultSet.next();
 
                     post = new PostDataSet(resultSet);
+                    post.setDate(post.getDate().substring(0, post.getDate().length()-2));
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -196,6 +206,14 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             String column = vote == 1 ? "likes" : "dislikes";
             String query = "UPDATE Post SET " + column + " = " + column +  "+1 WHERE id = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setInt(1, post);
+
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+            query = "UPDATE Post SET points=likes-dislikes WHERE id=?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, post);
 
