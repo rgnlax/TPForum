@@ -51,9 +51,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                     user.setId(resultSet.getInt(1));
                 }
             } catch (SQLException e) {
-                if (e.getErrorCode() == 1062) {
-                    return new ReplyTuple(Status.ALREADY_EXIST);
-                }
+                handeSQLException(e);
             }
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);
@@ -145,13 +143,115 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public ArrayList<UserDataSet> listFollowers(String email, Integer limit, String order, Integer sinceId) {
-        return null;
+    public ReplyTuple listFollowers(String email, Integer limit, String order, Integer sinceId) {
+        ArrayList<UserDataSet> followers = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following\n" );
+            query.append("from User_followers as UF\n");
+            query.append("join User as U on U.email=UF.user_email\n");
+            query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
+            query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
+            query.append("where UF.followee_email = ?");
+
+
+            if (sinceId != null) {
+                query.append(" AND U.id > " + sinceId);
+            }
+            query.append(" group by email");
+            if (order != null) {
+                query.append(" ORDER BY U.name ");
+                switch (order) {
+                    case "asc":
+                        query.append("ASC");
+                        break;
+                    case "desc":
+                        query.append("DESC");
+                        break;
+                    default:
+                        query.append("DESC");
+                }
+            } else {
+                query.append(" ORDER BY U.name DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setString(1, email);
+
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        try {
+                            followers.add(new UserDataSet(resultSet));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new ReplyTuple(Status.INVALID_REQUEST);
+        }
+        return new ReplyTuple(Status.OK, followers);
     }
 
     @Override
-    public ArrayList<UserDataSet> listFollowing(String email, Integer limit, String order, Integer sinceId) {
-        return null;
+    public ReplyTuple listFollowing(String email, Integer limit, String order, Integer sinceId) {
+        ArrayList<UserDataSet> followers = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following\n" );
+            query.append("from User_followers as UF\n");
+            query.append("join User as U on U.email=UF.followee_email\n");
+            query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
+            query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
+            query.append("where UF.user_email = ?");
+
+
+            if (sinceId != null) {
+                query.append(" AND U.id > " + sinceId);
+            }
+            query.append(" group by email");
+            if (order != null) {
+                query.append(" ORDER BY U.name ");
+                switch (order) {
+                    case "asc":
+                        query.append("ASC");
+                        break;
+                    case "desc":
+                        query.append("DESC");
+                        break;
+                    default:
+                        query.append("DESC");
+                }
+            } else {
+                query.append(" ORDER BY U.name DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setString(1, email);
+
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        try {
+                            followers.add(new UserDataSet(resultSet));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new ReplyTuple(Status.INVALID_REQUEST);
+        }
+        return new ReplyTuple(Status.OK, followers);
     }
 
     @Override
@@ -160,7 +260,29 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public void updateProfile(String jsonString) {
+    public ReplyTuple updateProfile(String data) {
+        String email;
+        try {
+            JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
+            //Required fields
+            email = object.get("user").getAsString();
+            String name = object.get("name").getAsString();
+            String about = object.get("about").getAsString();
+
+            String query = "UPDATE User SET name=?, about=? WHERE email=?";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, name);
+                stmt.setString(2, about);
+                stmt.setString(3, email);
+
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e ) {
+            return new ReplyTuple(Status.INVALID_REQUEST);
+        }
+        return details(email);
     }
 }

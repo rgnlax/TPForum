@@ -2,6 +2,10 @@ package ru.mp.forum.database.data;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * Created by maksim on 08.01.16.
@@ -43,6 +47,20 @@ public class UserDataSet {
         if (subscriptions != null) {
             this.subscriptions = subscriptions.split(",");
         }
+    }
+
+    public UserDataSet(ResultSet resultSet) throws Exception {
+            this (
+                    resultSet.getString("email"),
+                    resultSet.getInt("id"),
+                    resultSet.getString("username"),
+                    resultSet.getString("name"),
+                    resultSet.getString("about"),
+                    resultSet.getBoolean("isAnonymous"),
+                    resultSet.getString("followers"),
+                    resultSet.getString("following"),
+                    null
+            );
     }
 
     public String[] getFollowers() {

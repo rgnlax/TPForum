@@ -48,5 +48,29 @@ public class UserController extends BaseRestController {
         return new RestResponse(reply);
     }
 
+    @RequestMapping(value = "/updateProfile", method = RequestMethod.POST)
+    public RestResponse updateProfile(@RequestBody String data) {
+        ReplyTuple reply = userDAO.updateProfile(data);
+        return new RestResponse(reply);
+    }
+
+    @RequestMapping(value = "/listFollowers", method = RequestMethod.GET)
+    public RestResponse listFollowers(@RequestParam(value = "user", required = true) String email,
+                                      @RequestParam(value = "limit", required = false) Integer limit,
+                                      @RequestParam(value = "order", required = false) String order,
+                                      @RequestParam(value = "since_id", required = false) Integer sinceId) {
+        ReplyTuple reply = userDAO.listFollowers(email, limit, order, sinceId);
+        return new RestResponse(reply);
+    }
+
+    @RequestMapping(value = "/listFollowing", method = RequestMethod.GET)
+    public RestResponse listFollowing(@RequestParam(value = "user", required = true) String email,
+                                      @RequestParam(value = "limit", required = false) Integer limit,
+                                      @RequestParam(value = "order", required = false) String order,
+                                      @RequestParam(value = "since_id", required = false) Integer sinceId) {
+        ReplyTuple reply = userDAO.listFollowing(email, limit, order, sinceId);
+        return new RestResponse(reply);
+    }
+
 
 }

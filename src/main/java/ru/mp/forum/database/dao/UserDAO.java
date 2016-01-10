@@ -19,11 +19,11 @@ public interface UserDAO extends BaseDAO {
 
     ReplyTuple unfollow(String data);
 
-    ArrayList<UserDataSet> listFollowers(String email, Integer limit, String order, Integer sinceId);
+    ReplyTuple listFollowers(String email, Integer limit, String order, Integer sinceId);
 
-    ArrayList<UserDataSet> listFollowing(String email, Integer limit, String order, Integer sinceId);
+    ReplyTuple listFollowing(String email, Integer limit, String order, Integer sinceId);
 
     ArrayList<PostDataSet> listPosts(String email, Integer limit, String order, String since);
 
-    void updateProfile(String jsonString);
+    ReplyTuple updateProfile(String jsonString);
 }
