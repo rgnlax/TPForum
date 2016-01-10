@@ -1,5 +1,7 @@
 package ru.mp.forum.database.dao.impl.reply;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
+
 import java.util.Objects;
 
 /**

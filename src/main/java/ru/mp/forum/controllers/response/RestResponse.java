@@ -1,5 +1,6 @@
 package ru.mp.forum.controllers.response;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
 
 import java.util.Map;

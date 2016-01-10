@@ -37,6 +37,9 @@ public abstract class BaseDAOImpl implements BaseDAO {
             if (tableName == "User") {
                 TExecutor.execQuery(connection, "TRUNCATE TABLE User_followers");
             }
+            if (tableName == "Thread") {
+                TExecutor.execQuery(connection, "TRUNCATE TABLE User_subscribes");
+            }
             TExecutor.execQuery(connection, "SET FOREIGN_KEY_CHECKS = 1;");
         } catch (Exception e) {
             e.printStackTrace();

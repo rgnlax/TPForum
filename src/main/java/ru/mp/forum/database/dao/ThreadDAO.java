@@ -1,5 +1,6 @@
 package ru.mp.forum.database.dao;
 
+import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.ThreadDataSet;
 
@@ -10,9 +11,9 @@ import java.util.ArrayList;
  */
 public interface ThreadDAO extends BaseDAO {
 
-    ThreadDataSet create(String jsonString);
+    ReplyTuple create(String jsonString);
 
-    ThreadDataSet details(int threadId, String[] related);
+    ReplyTuple details(int threadId, String[] related);
 
     ArrayList<PostDataSet> listPosts(int threadId, String since, Integer limit, String sort, String order);
 
@@ -20,19 +21,19 @@ public interface ThreadDAO extends BaseDAO {
 
     ArrayList<ThreadDataSet> listForumThreads(String forum, String since, Integer limit, String order);
 
-    String remove(String jsonString);
+    ReplyTuple remove(String jsonString);
 
-    String restore(String jsonString);
+    ReplyTuple restore(String jsonString);
 
-    ThreadDataSet update(String jsonString);
+    ReplyTuple update(String jsonString);
 
-    ThreadDataSet vote(String jsonString);
+    ReplyTuple vote(String jsonString);
 
-    String subscribe(String jsonString);
+    ReplyTuple subscribe(String data);
 
-    String unsubscribe(String jsonString);
+    ReplyTuple unsubscribe(String jsonString);
 
-    String open(String jsonString);
+    ReplyTuple open(String jsonString);
 
-    String close(String jsonString);
+    ReplyTuple close(String jsonString);
 }
