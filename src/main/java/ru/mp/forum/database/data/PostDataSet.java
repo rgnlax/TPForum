@@ -12,7 +12,7 @@ public class PostDataSet {
     private Object forum;
     private Object user;
     private final String message;
-    private final Integer parent;
+    private Integer parent;
     private final boolean isEdited;
     private final boolean isApproved;
     private final boolean isHighlighted;
@@ -58,6 +58,10 @@ public class PostDataSet {
                 resultSet.getInt("dislikes"),
                 resultSet.getInt("points")
         );
+
+        if (parent == 0) {
+            parent = null;
+        }
     }
 
 

@@ -80,7 +80,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
         try {
             String query = "SELECT Thread.*, count(Post.id) as posts FROM Thread \n" +
                     "LEFT JOIN Post on Post.thread_id = Thread.id\n" +
-                    "WHERE Thread.id = ?";
+                    "WHERE Thread.id = ? AND Post.isDeleted = false";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, threadId);
 
