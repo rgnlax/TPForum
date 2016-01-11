@@ -1,5 +1,7 @@
 package ru.mp.forum.database.data;
 
+import com.google.gson.JsonObject;
+
 import java.sql.ResultSet;
 import java.util.Objects;
 
@@ -26,6 +28,13 @@ public class ForumDataSet {
                 resultSet.getString("user_email"),
                 resultSet.getString("name")
         );
+    }
+
+    public ForumDataSet(JsonObject object) throws Exception {
+        user = object.get("user").getAsString();
+        shortName = object.get("short_name").getAsString();
+        name = object.get("name").getAsString();
+        id = object.has("id") ? object.get("id").getAsInt() : 0;
     }
 
     public void setUser(Object user) {

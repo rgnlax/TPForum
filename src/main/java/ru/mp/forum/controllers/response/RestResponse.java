@@ -1,7 +1,6 @@
 package ru.mp.forum.controllers.response;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 
 import java.util.Map;
 
@@ -43,7 +42,7 @@ public class RestResponse {
         this.code = code;
     }
 
-    public RestResponse (ReplyTuple reply) {
+    public RestResponse (Reply reply) {
         this.code = reply.getCode();
         this.response = reply.getObject();
     }

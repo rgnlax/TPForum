@@ -1,13 +1,10 @@
 package ru.mp.forum.controllers;
 
-import com.sun.org.apache.regexp.internal.RE;
 import org.springframework.web.bind.annotation.*;
 import ru.mp.forum.controllers.response.RestResponse;
-import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.UserDAO;
 import ru.mp.forum.database.dao.impl.UserDAOImpl;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
-import ru.mp.forum.database.data.UserDataSet;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 
 /**
  * Created by maksim on 08.01.16.
@@ -26,31 +23,31 @@ public class UserController extends BaseRestController {
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     public RestResponse create(@RequestBody String data) {
-        ReplyTuple reply = userDAO.create(data);
+        Reply reply = userDAO.create(data);
         return new RestResponse(reply);
     }
 
     @RequestMapping(value = "/details", method = RequestMethod.GET)
     public RestResponse details(@RequestParam(value = "user") String email) {
-        ReplyTuple reply = userDAO.details(email);
+        Reply reply = userDAO.details(email);
         return new RestResponse(reply);
     }
 
     @RequestMapping(value = "/follow", method = RequestMethod.POST)
     public RestResponse follow(@RequestBody String data) {
-        ReplyTuple reply = userDAO.follow(data);
+        Reply reply = userDAO.follow(data);
         return new RestResponse(reply);
     }
 
     @RequestMapping(value = "/unfollow", method = RequestMethod.POST)
     public RestResponse unfollow(@RequestBody String data) {
-        ReplyTuple reply = userDAO.unfollow(data);
+        Reply reply = userDAO.unfollow(data);
         return new RestResponse(reply);
     }
 
     @RequestMapping(value = "/updateProfile", method = RequestMethod.POST)
     public RestResponse updateProfile(@RequestBody String data) {
-        ReplyTuple reply = userDAO.updateProfile(data);
+        Reply reply = userDAO.updateProfile(data);
         return new RestResponse(reply);
     }
 
@@ -59,7 +56,7 @@ public class UserController extends BaseRestController {
                                       @RequestParam(value = "limit", required = false) Integer limit,
                                       @RequestParam(value = "order", required = false) String order,
                                       @RequestParam(value = "since_id", required = false) Integer sinceId) {
-        ReplyTuple reply = userDAO.listFollowers(email, limit, order, sinceId);
+        Reply reply = userDAO.listFollowers(email, limit, order, sinceId);
         return new RestResponse(reply);
     }
 
@@ -68,7 +65,7 @@ public class UserController extends BaseRestController {
                                       @RequestParam(value = "limit", required = false) Integer limit,
                                       @RequestParam(value = "order", required = false) String order,
                                       @RequestParam(value = "since_id", required = false) Integer sinceId) {
-        ReplyTuple reply = userDAO.listFollowing(email, limit, order, sinceId);
+        Reply reply = userDAO.listFollowing(email, limit, order, sinceId);
         return new RestResponse(reply);
     }
 

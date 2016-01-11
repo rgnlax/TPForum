@@ -1,25 +1,25 @@
 package ru.mp.forum.database.dao;
 
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 
 /**
  * Created by maksim on 08.01.16.
  */
 public interface PostDAO extends  BaseDAO {
-    ReplyTuple create(String jsonString);
+    Reply create(String jsonString);
 
-    ReplyTuple details(int postId, String[] related);
+    Reply details(int postId, String[] related);
 
-    ReplyTuple listForumPosts(String forum, String since, Integer limit, String order);
+    Reply listForumPosts(String forum, String since, Integer limit, String order);
 
-    ReplyTuple listThreadPosts(int threadId, String since, Integer limit, String order);
+    Reply listThreadPosts(int threadId, String since, Integer limit, String order);
 
-    ReplyTuple remove(String jsonString);
+    Reply remove(String jsonString);
 
-    ReplyTuple restore(String jsonString);
+    Reply restore(String jsonString);
 
-    ReplyTuple update(String jsonString);
+    Reply update(String jsonString);
 
-    ReplyTuple vote(String jsonString);
+    Reply vote(String jsonString);
 }
 

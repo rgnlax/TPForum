@@ -6,7 +6,7 @@ import com.google.gson.JsonParser;
 import com.mysql.jdbc.Statement;
 import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.PostDAO;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 
 import java.sql.Connection;
@@ -25,7 +25,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     }
 
     @Override
-    public ReplyTuple create(String data) {
+    public Reply create(String data) {
         PostDataSet post;
         try {
             post = new PostDataSet(new JsonParser().parse(data).getAsJsonObject());
@@ -50,18 +50,22 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 try (ResultSet resultSet = stmt.getGeneratedKeys()) {
                     resultSet.next();
                     post.setId(resultSet.getInt(1));
+
+                    if (stmt.getUpdateCount() > 0 && !post.getIsDeleted()) {
+                        updateThread(true, (Integer)post.getId());
+                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, post);
+        return new Reply(Status.OK, post);
     }
 
     @Override
-    public ReplyTuple details(int postId, String[] related) {
+    public Reply details(int postId, String[] related) {
         PostDataSet post;
         try {
             String query = "SELECT * FROM " + tableName + " WHERE id = ?";
@@ -77,7 +81,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
 
         if (related != null) {
@@ -91,63 +95,71 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 post.setThread(new ThreadDAOImpl(connection).details(Integer.parseInt(post.getThread().toString()), null).getObject());
             }
         }
-        return new ReplyTuple(Status.OK, post);
+        return new Reply(Status.OK, post);
     }
 
     @Override
-    public ReplyTuple listForumPosts(String forum, String since, Integer limit, String order) {
+    public Reply listForumPosts(String forum, String since, Integer limit, String order) {
         return null;
     }
 
     @Override
-    public ReplyTuple listThreadPosts(int threadId, String since, Integer limit, String order) {
+    public Reply listThreadPosts(int threadId, String since, Integer limit, String order) {
         return null;
     }
 
     @Override
-    public ReplyTuple remove(String data) {
+    public Reply remove(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
-            Integer thread = object.get("post").getAsInt();
+            Integer post = object.get("post").getAsInt();
             try {
-                String query = "UPDATE " + tableName + " SET isDeleted = 1 WHERE id = ?";
+                String query = "UPDATE " + tableName + " SET isDeleted = 1 WHERE id = ? AND isDeleted = 0";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                    stmt.setInt(1, thread);
-                    stmt.execute();
+                    stmt.setInt(1, post);
+                    stmt.executeUpdate();
+
+                    if (stmt.getUpdateCount() > 0) {
+                        updateThread(false, post);
+                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple restore(String data) {
+    public Reply restore(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
-            Integer thread = object.get("post").getAsInt();
+            Integer post = object.get("post").getAsInt();
             try {
-                String query = "UPDATE " + tableName + " SET isDeleted = 0 WHERE id = ?";
+                String query = "UPDATE " + tableName + " SET isDeleted = 0 WHERE id = ? AND isDeleted = 1";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                    stmt.setInt(1, thread);
-                    stmt.execute();
+                    stmt.setInt(1, post);
+                    stmt.executeUpdate();
+
+                    if (stmt.getUpdateCount() > 0) {
+                        updateThread(true, post);
+                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple update(String data) {
+    public Reply update(String data) {
         Integer post;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -165,13 +177,13 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(post, null).getObject());
+        return new Reply(Status.OK, details(post, null).getObject());
     }
 
     @Override
-    public ReplyTuple vote(String data) {
+    public Reply vote(String data) {
         Integer post;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -189,8 +201,25 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(post, null).getObject());
+        return new Reply(Status.OK, details(post, null).getObject());
     }
+
+    private void updateThread(boolean inc, int id) {
+        try {
+            String operation = inc ? "+" : "-";
+            String query = "UPDATE Thread SET posts=posts "+ operation +" 1 WHERE id = (SELECT thread_id FROM Post WHERE Post.id = ?)";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setInt(1, id);
+
+                stmt.executeUpdate();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

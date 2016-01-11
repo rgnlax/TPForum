@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.UserDAO;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.UserDataSet;
 
@@ -22,7 +22,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public ReplyTuple create(String data) {
+    public Reply create(String data) {
         UserDataSet user;
         try {
             user = new UserDataSet(new JsonParser().parse(data).getAsJsonObject());
@@ -46,13 +46,13 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, user);
+        return new Reply(Status.OK, user);
     }
 
     @Override
-    public ReplyTuple details(String email) {
+    public Reply details(String email) {
         UserDataSet user;
         String query = "SELECT U.*, group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n" +
                 "FROM User U \n" +
@@ -68,16 +68,16 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 user = new UserDataSet(resultSet);
 
             } catch (Exception e) {
-                return new ReplyTuple(Status.NOT_FOUND);
+                return new Reply(Status.NOT_FOUND);
             }
         } catch (SQLException e) {
-            return new ReplyTuple(Status.INCORRECT_REQUEST);
+            return new Reply(Status.INCORRECT_REQUEST);
         }
-        return new ReplyTuple(Status.OK, user);
+        return new Reply(Status.OK, user);
     }
 
     @Override
-    public ReplyTuple follow(String data) {
+    public Reply follow(String data) {
         String follower;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -95,13 +95,13 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(follower).getObject());
+        return new Reply(Status.OK, details(follower).getObject());
     }
 
     @Override
-    public ReplyTuple unfollow(String data) {
+    public Reply unfollow(String data) {
         String follower;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -119,21 +119,22 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(follower).getObject());
+        return new Reply(Status.OK, details(follower).getObject());
     }
 
     @Override
-    public ReplyTuple listFollowers(String email, Integer limit, String order, Integer sinceId) {
+    public Reply listFollowers(String email, Integer limit, String order, Integer sinceId) {
         ArrayList<UserDataSet> followers = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscriptions\n" );
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscribes\n" );
             query.append("from User_followers as UF\n");
             query.append("join User as U on U.email=UF.user_email\n");
             query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
-            query.append("left join User_subscriptions as JUS on JUS.user_email = U.email\n");
+            query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
+            query.append("left join User_subscribes as JUS on JUS.user_email = U.email\n");
             query.append("where UF.followee_email = ?");
 
 
@@ -175,27 +176,27 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, followers);
+        return new Reply(Status.OK, followers);
     }
 
     @Override
-    public ReplyTuple listFollowing(String email, Integer limit, String order, Integer sinceId) {
+    public Reply listFollowing(String email, Integer limit, String order, Integer sinceId) {
         ArrayList<UserDataSet> followers = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscriptions\n" );
+            query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscribes\n" );
             query.append("from User_followers as UF\n");
             query.append("join User as U on U.email=UF.followee_email\n");
             query.append("left join User_followers as JUF on JUF.followee_email = U.email\n");
             query.append("left join User_followers as JUF1 on JUF1.user_email = U.email\n");
-            query.append("left join User_subscriptions as JUS on JUS.user_email = U.email\n");
+            query.append("left join User_subscribes as JUS on JUS.user_email = U.email\n");
             query.append("where UF.user_email = ?");
 
 
             if (sinceId != null) {
-                query.append(" AND U.id > " + sinceId);
+                query.append(" AND U.id >= " + sinceId);
             }
             query.append(" group by email");
             if (order != null) {
@@ -216,7 +217,6 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
             if (limit != null) {
                 query.append(" LIMIT " + limit);
             }
-            System.out.println(query);
             try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
                 stmt.setString(1, email);
 
@@ -233,9 +233,9 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, followers);
+        return new Reply(Status.OK, followers);
     }
 
     @Override
@@ -244,7 +244,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public ReplyTuple updateProfile(String data) {
+    public Reply updateProfile(String data) {
         String email;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -265,7 +265,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e ) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
         return details(email);
     }

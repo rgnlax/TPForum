@@ -1,14 +1,12 @@
 package ru.mp.forum.database.dao.impl;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mysql.jdbc.Statement;
 import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.ThreadDAO;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.ThreadDataSet;
 
@@ -18,8 +16,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by maksim on 08.01.16.
@@ -32,7 +28,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     }
 
     @Override
-    public ReplyTuple create(String jsonString) {
+    public Reply create(String jsonString) {
         ThreadDataSet thread;
         try {
             thread = new ThreadDataSet(new JsonParser().parse(jsonString).getAsJsonObject());
@@ -58,21 +54,20 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, thread);
+        return new Reply(Status.OK, thread);
     }
 
     @Override
-    public ReplyTuple details(int threadId, String[] related) {
+    public Reply details(int threadId, String[] related) {
         ThreadDataSet thread;
         try {
             String query = "SELECT  "+ tableName+".*, count(Post.id) as posts FROM  "+ tableName+"  \n" +
-                    "LEFT JOIN Post on Post.thread_id =  "+ tableName+" .id\n" +
+                    "INNER JOIN Post on Post.thread_id =  "+ tableName+" .id\n" +
                     "WHERE  "+ tableName+" .id = ? AND Post.isDeleted = false";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, threadId);
-                System.out.print(stmt.toString());
 
                 try (ResultSet resultSet = stmt.executeQuery()) {
                     resultSet.next();
@@ -83,7 +78,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
 
         if (related != null) {
@@ -94,10 +89,10 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 thread.setForum(new ForumDAOImpl(connection).details(thread.getForum().toString(), null).getObject());
             }
             if (Arrays.asList(related).contains("thread")) {
-                return new ReplyTuple(Status.INCORRECT_REQUEST);
+                return new Reply(Status.INCORRECT_REQUEST);
             }
         }
-        return new ReplyTuple(Status.OK, thread);
+        return new Reply(Status.OK, thread);
     }
 
     @Override
@@ -116,7 +111,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     }
 
     @Override
-    public ReplyTuple remove(String data) {
+    public Reply remove(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -136,13 +131,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple restore(String data) {
+    public Reply restore(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -162,13 +157,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple update(String data) {
+    public Reply update(String data) {
         Integer thread;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -188,13 +183,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(thread, null).getObject());
+        return new Reply(Status.OK, details(thread, null).getObject());
     }
 
     @Override
-    public ReplyTuple vote(String data) {
+    public Reply vote(String data) {
         Integer thread;
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
@@ -212,13 +207,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, details(thread, null).getObject());
+        return new Reply(Status.OK, details(thread, null).getObject());
     }
 
     @Override
-    public ReplyTuple subscribe(String data) {
+    public Reply subscribe(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -236,13 +231,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple unsubscribe(String data) {
+    public Reply unsubscribe(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -260,13 +255,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple open(String data) {
+    public Reply open(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -281,13 +276,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 
     @Override
-    public ReplyTuple close(String data) {
+    public Reply close(String data) {
         try {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
@@ -302,8 +297,8 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 return handeSQLException(e);
             }
         } catch (Exception e) {
-            return new ReplyTuple(Status.INVALID_REQUEST);
+            return new Reply(Status.INVALID_REQUEST);
         }
-        return new ReplyTuple(Status.OK, new Gson().fromJson(data, Object.class));
+        return new Reply(Status.OK, new Gson().fromJson(data, Object.class));
     }
 }

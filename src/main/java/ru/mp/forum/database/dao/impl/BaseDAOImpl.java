@@ -2,11 +2,10 @@ package ru.mp.forum.database.dao.impl;
 
 import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.BaseDAO;
-import ru.mp.forum.database.dao.impl.reply.ReplyTuple;
+import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.executor.TExecutor;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.temporal.Temporal;
 
 /**
  * Created by maksim on 09.01.16.
@@ -50,11 +49,11 @@ public abstract class BaseDAOImpl implements BaseDAO {
 
     }
 
-    protected ReplyTuple handeSQLException(SQLException e) {
+    protected Reply handeSQLException(SQLException e) {
         if (e.getErrorCode() == 1062) {
-            return new ReplyTuple(Status.ALREADY_EXIST);
+            return new Reply(Status.ALREADY_EXIST);
         } else {
-            return new ReplyTuple(Status.NOT_FOUND);
+            return new Reply(Status.NOT_FOUND);
         }
     }
 }
