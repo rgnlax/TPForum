@@ -10,6 +10,7 @@ import ru.mp.forum.database.data.UserDataSet;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by maksim on 08.01.16.
@@ -239,8 +240,44 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     }
 
     @Override
-    public ArrayList<PostDataSet> listPosts(String email, Integer limit, String order, String since) {
-        return null;
+    public Reply listPosts(String email, Integer limit, String order, String since) {
+        ArrayList<PostDataSet> posts = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT * FROM Post");
+            query.append(" WHERE user_email = ?");
+            if (since != null) {
+                query.append(" AND date >= '" + since + "'");
+            }
+            if (order != null) {
+                query.append(" ORDER BY date ");
+                switch (order) {
+                    case "asc": query.append(" ASC"); break;
+                    case "desc": query.append(" DESC"); break;
+                    default: query.append(" DESC");
+                }
+            } else {
+                query.append(" ORDER BY date DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setString(1, email);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        PostDataSet post = new PostDataSet(resultSet);
+
+                        posts.add(post);
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new Reply(Status.INVALID_REQUEST);
+        }
+        return new Reply(Status.OK, posts);
     }
 
     @Override

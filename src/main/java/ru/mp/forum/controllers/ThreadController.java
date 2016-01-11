@@ -71,5 +71,30 @@ public class ThreadController extends BaseRestController {
     public RestResponse close(@RequestBody String body) {
         return new RestResponse(threadDAO.close(body));
     }
+
+    @RequestMapping(value = "/list", method = RequestMethod.GET, params = {"user"})
+    public RestResponse listUserThreads(@RequestParam(value = "user", required = true) String user,
+                                                @RequestParam(value = "since", required = false) String since,
+                                                @RequestParam(value = "limit", required = false) Integer limit,
+                                                @RequestParam(value = "order", required = false) String order) {
+        return new RestResponse(threadDAO.listUserThreads(user, since, limit, order));
+    }
+
+    @RequestMapping(value = "/list", method = RequestMethod.GET, params = {"forum"})
+    public RestResponse listForumThreads(@RequestParam(value = "forum", required = true) String forum,
+                                                 @RequestParam(value = "since", required = false) String since,
+                                                 @RequestParam(value = "limit", required = false) Integer limit,
+                                                 @RequestParam(value = "order", required = false) String order) {
+        return new RestResponse(threadDAO.listForumThreads(forum, since, limit, order));
+    }
+
+    @RequestMapping(value = "/listPosts", method = RequestMethod.GET)
+    public RestResponse listPosts(@RequestParam(value = "thread", required = true) int threadId,
+                                          @RequestParam(value = "since", required = false) String since,
+                                          @RequestParam(value = "limit", required = false) Integer limit,
+                                          @RequestParam(value = "sort", required = false) String sort,
+                                          @RequestParam(value = "order", required = false) String order) {
+        return new RestResponse(threadDAO.listPosts(threadId, since, limit, sort, order));
+    }
 }
 

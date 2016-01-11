@@ -100,12 +100,12 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
     @Override
     public Reply listForumPosts(String forum, String since, Integer limit, String order) {
-        return null;
+        return new ForumDAOImpl(connection).listPosts(forum, since, limit, order, null);
     }
 
     @Override
     public Reply listThreadPosts(int threadId, String since, Integer limit, String order) {
-        return null;
+        return new ThreadDAOImpl(connection).listPosts(threadId, since, limit, null, order);
     }
 
     @Override

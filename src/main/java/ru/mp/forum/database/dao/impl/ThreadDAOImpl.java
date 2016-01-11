@@ -96,18 +96,126 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     }
 
     @Override
-    public ArrayList<PostDataSet> listPosts(int threadId, String since, Integer limit, String sort, String order) {
-        return null;
+    public Reply listPosts(int threadId, String since, Integer limit, String sort, String order) {
+        ArrayList<PostDataSet> posts = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT * FROM Post");
+            query.append(" WHERE thread_id = ?");
+            if (since != null) {
+                query.append(" AND date >= '" + since + "'");
+            }
+            if (order != null) {
+                query.append(" ORDER BY date ");
+                switch (order) {
+                    case "asc": query.append(" ASC"); break;
+                    case "desc": query.append(" DESC"); break;
+                    default: query.append(" DESC");
+                }
+            } else {
+                query.append(" ORDER BY date DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setInt(1, threadId);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        PostDataSet post = new PostDataSet(resultSet);
+
+                        posts.add(post);
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new Reply(Status.INVALID_REQUEST);
+        }
+        return new Reply(Status.OK, posts);
     }
 
     @Override
-    public ArrayList<ThreadDataSet> listUserThreads(String user, String since, Integer limit, String order) {
-        return null;
+    public Reply listUserThreads(String user, String since, Integer limit, String order) {
+        ArrayList<ThreadDataSet> thread = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT * FROM Thread");
+            query.append(" WHERE user_email = ?");
+            if (since != null) {
+                query.append(" AND date >= '" + since + "'");
+            }
+            if (order != null) {
+                query.append(" ORDER BY date ");
+                switch (order) {
+                    case "asc": query.append(" ASC"); break;
+                    case "desc": query.append(" DESC"); break;
+                    default: query.append(" DESC");
+                }
+            } else {
+                query.append(" ORDER BY date DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setString(1, user);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        ThreadDataSet post = new ThreadDataSet(resultSet);
+
+                        thread.add(post);
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new Reply(Status.INVALID_REQUEST);
+        }
+        return new Reply(Status.OK, thread);
     }
 
     @Override
-    public ArrayList<ThreadDataSet> listForumThreads(String forum, String since, Integer limit, String order) {
-        return null;
+    public Reply listForumThreads(String forum, String since, Integer limit, String order) {
+        ArrayList<ThreadDataSet> thread = new ArrayList<>();
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT * FROM Thread");
+            query.append(" WHERE forum_short_name = ?");
+            if (since != null) {
+                query.append(" AND date >= '" + since + "'");
+            }
+            if (order != null) {
+                query.append(" ORDER BY date ");
+                switch (order) {
+                    case "asc": query.append(" ASC"); break;
+                    case "desc": query.append(" DESC"); break;
+                    default: query.append(" DESC");
+                }
+            } else {
+                query.append(" ORDER BY date DESC");
+            }
+            if (limit != null) {
+                query.append(" LIMIT " + limit);
+            }
+            try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+                stmt.setString(1, forum);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        ThreadDataSet post = new ThreadDataSet(resultSet);
+
+                        thread.add(post);
+                    }
+                }
+            } catch (SQLException e) {
+                return handeSQLException(e);
+            }
+        } catch (Exception e) {
+            return new Reply(Status.INVALID_REQUEST);
+        }
+        return new Reply(Status.OK, thread);
     }
 
     @Override
@@ -117,7 +225,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE  "+ tableName+"  SET isDeleted = 1 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+ "  SET isDeleted = 1, posts = 0 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -143,16 +251,20 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE  "+ tableName+"  SET isDeleted = 0 WHERE id = ?";
+                int count = 0;
+                String query = "UPDATE Post SET isDeleted = 0 WHERE thread_id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
-                    stmt.execute();
+                    count = stmt.executeUpdate();
                 }
-                query = "UPDATE Post SET isDeleted = 0 WHERE thread_id = ?";
+
+                query = "UPDATE  "+ tableName+"  SET isDeleted = 0, posts = ?  WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                    stmt.setInt(1, thread);
+                    stmt.setInt(1, count);
+                    stmt.setInt(2, thread);
                     stmt.execute();
                 }
+
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
@@ -172,7 +284,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             String slug = object.get("slug").getAsString();
             thread = object.get("thread").getAsInt();
 
-            String query = "UPDATE  "+ tableName+"  SET message = ?, slug = ? WHERE id = ?";
+            String query = "UPDATE  "+ tableName+ "  SET message = ?, slug = ? WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setString(1, message);
                 stmt.setString(2, slug);

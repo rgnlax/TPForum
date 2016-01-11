@@ -69,5 +69,13 @@ public class UserController extends BaseRestController {
         return new RestResponse(reply);
     }
 
+    @RequestMapping(value = "/listPosts", method = RequestMethod.GET)
+    public RestResponse listPosts(@RequestParam(value = "user", required = true) String email,
+                                          @RequestParam(value = "limit", required = false) Integer limit,
+                                          @RequestParam(value = "order", required = false) String order,
+                                          @RequestParam(value = "since", required = false) String since){
+        return new RestResponse(userDAO.listPosts(email, limit, order, since));
+    }
+
 
 }
