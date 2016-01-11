@@ -35,20 +35,9 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     public ReplyTuple create(String jsonString) {
         ThreadDataSet thread;
         try {
-            JsonObject object = new JsonParser().parse(jsonString).getAsJsonObject();
+            thread = new ThreadDataSet(new JsonParser().parse(jsonString).getAsJsonObject());
 
-            String forum = object.get("forum").getAsString();
-            String title = object.get("title").getAsString();
-            String user = object.get("user").getAsString();
-            String date = object.get("date").getAsString();
-            String message = object.get("message").getAsString();
-            String slug = object.get("slug").getAsString();
-            boolean isClosed = object.get("isClosed").getAsBoolean();
-            boolean isDeleted = object.has("getIsDeleted") ? object.get("getIsDeleted").getAsBoolean() : false;
-
-            thread = new ThreadDataSet(0, title,date,message,slug,forum,user,0,0,0,isDeleted,isClosed,0);
-
-            String query = "INSERT INTO Thread (forum_short_name, title, isClosed, user_email, date, message, slug, isDeleted) VALUES (?,?,?,?,?,?,?,?);";
+            String query = "INSERT INTO  "+ tableName+"  (forum_short_name, title, isClosed, user_email, date, message, slug, isDeleted) VALUES (?,?,?,?,?,?,?,?);";
             try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, thread.getForum().toString());
                 stmt.setString(2, thread.getTitle());
@@ -78,17 +67,17 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     public ReplyTuple details(int threadId, String[] related) {
         ThreadDataSet thread;
         try {
-            String query = "SELECT Thread.*, count(Post.id) as posts FROM Thread \n" +
-                    "LEFT JOIN Post on Post.thread_id = Thread.id\n" +
-                    "WHERE Thread.id = ? AND Post.isDeleted = false";
+            String query = "SELECT  "+ tableName+".*, count(Post.id) as posts FROM  "+ tableName+"  \n" +
+                    "LEFT JOIN Post on Post.thread_id =  "+ tableName+" .id\n" +
+                    "WHERE  "+ tableName+" .id = ? AND Post.isDeleted = false";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, threadId);
+                System.out.print(stmt.toString());
 
                 try (ResultSet resultSet = stmt.executeQuery()) {
                     resultSet.next();
 
                     thread = new ThreadDataSet(resultSet);
-                    thread.setDate(thread.getDate().substring(0, thread.getDate().length()-2));
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -133,7 +122,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE Thread SET isDeleted = 1 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+"  SET isDeleted = 1 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -159,7 +148,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE Thread SET isDeleted = 0 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+"  SET isDeleted = 0 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -188,7 +177,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             String slug = object.get("slug").getAsString();
             thread = object.get("thread").getAsInt();
 
-            String query = "UPDATE Thread SET message = ?, slug = ? WHERE id = ?";
+            String query = "UPDATE  "+ tableName+"  SET message = ?, slug = ? WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setString(1, message);
                 stmt.setString(2, slug);
@@ -214,19 +203,13 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             thread = object.get("thread").getAsInt();
 
             String column = vote == 1 ? "likes" : "dislikes";
-            String query = "UPDATE Thread SET " + column + " = " + column +  "+1 WHERE id = ?";
+            String query = "UPDATE  "+ tableName+"  SET " + column + " = " + column +  "+1 WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, thread);
 
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 return handeSQLException(e);
-            }
-            query = "UPDATE Thread SET points=likes-dislikes WHERE id=?";
-            try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                stmt.setInt(1, thread);
-
-                stmt.executeUpdate();
             }
         } catch (Exception e) {
             return new ReplyTuple(Status.INVALID_REQUEST);
@@ -289,7 +272,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE Thread SET isClosed = 0 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+"  SET isClosed = 0 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -310,7 +293,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE Thread SET isClosed = 1 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+"  SET isClosed = 1 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();

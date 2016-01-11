@@ -1,5 +1,7 @@
 package ru.mp.forum.database.data;
 
+import com.google.gson.JsonObject;
+
 import java.sql.ResultSet;
 
 /**
@@ -68,8 +70,17 @@ public class UserDataSet {
                     resultSet.getBoolean("isAnonymous"),
                     resultSet.getString("followers"),
                     resultSet.getString("following"),
-                    resultSet.getString("subscriptions")
+                    resultSet.getString("subscribes")
             );
+    }
+
+    public UserDataSet(JsonObject object) throws Exception {
+        username = object.get("username").isJsonNull() ? null : object.get("username").getAsString();
+        email = object.get("email").isJsonNull() ? null : object.get("email").getAsString();
+        name = object.get("name").isJsonNull() ? null : object.get("name").getAsString();
+        about = object.get("about").isJsonNull() ? null : object.get("about").getAsString();
+        isAnonymous = !object.has("isAnonymous") ? false : object.get("isAnonymous").getAsBoolean();
+        id = object.has("id") ? object.get("id").getAsInt() : 0;
     }
 
     public String[] getFollowers() {

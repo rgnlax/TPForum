@@ -28,35 +28,12 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     public ReplyTuple create(String data) {
         PostDataSet post;
         try {
-            JsonObject object = new JsonParser().parse(data).getAsJsonObject();
+            post = new PostDataSet(new JsonParser().parse(data).getAsJsonObject());
 
-            String forum = object.get("forum").getAsString();
-            Integer thread = object.get("thread").getAsInt();
-            String user = object.get("user").getAsString();
-            String message = object.get("message").getAsString();
-            String date = object.get("date").getAsString();
-            Integer parent;
-            if (object.has("parent")) {
-                if (object.get("parent").isJsonNull()) {
-                    parent = null;
-                } else {
-                    parent = object.get("parent").getAsInt();
-                }
-            } else {
-                parent = null;
-            }
-            boolean isApproved = object.has("isApproved") ? object.get("isApproved").getAsBoolean() : false;
-            boolean isEdited = object.has("isEdited") ? object.get("isEdited").getAsBoolean() : false;
-            boolean isHighlighted = object.has("isHighlighted") ? object.get("isHighlighted").getAsBoolean() : false;
-            boolean isSpam = object.has("isSpam") ? object.get("isSpam").getAsBoolean() : false;
-            boolean isDeleted = object.has("isDeleted") ? object.get("isDeleted").getAsBoolean() : false;
-
-            post = new PostDataSet(0,date,thread,forum,user,message,parent,isEdited,isApproved,isHighlighted,isSpam,isDeleted,0,0,0);
-
-            String query = "INSERT INTO Post (date, thread_id, forum_short_name, user_email, message, m_path, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes, points)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+            String query = "INSERT INTO " + tableName + " (date, thread_id, forum_short_name, user_email, message, m_path, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
             try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, post.getDate());
-                stmt.setInt(2, thread);
+                stmt.setInt(2, (Integer)post.getThread());
                 stmt.setString(3, post.getForum().toString());
                 stmt.setString(4, post.getUser().toString());
                 stmt.setString(5, post.getMessage());
@@ -68,7 +45,6 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 stmt.setBoolean(11, post.getIsSpam());
                 stmt.setInt(12, post.getLikes());
                 stmt.setInt(13, post.getDislikes());
-                stmt.setInt(14, post.getPoints());
 
                 stmt.executeUpdate();
                 try (ResultSet resultSet = stmt.getGeneratedKeys()) {
@@ -88,7 +64,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     public ReplyTuple details(int postId, String[] related) {
         PostDataSet post;
         try {
-            String query = "SELECT * FROM Post WHERE id = ?";
+            String query = "SELECT * FROM " + tableName + " WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, postId);
 
@@ -96,7 +72,6 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                     resultSet.next();
 
                     post = new PostDataSet(resultSet);
-                    post.setDate(post.getDate().substring(0, post.getDate().length()-2));
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -136,7 +111,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             Integer thread = object.get("post").getAsInt();
             try {
-                String query = "UPDATE Post SET isDeleted = 1 WHERE id = ?";
+                String query = "UPDATE " + tableName + " SET isDeleted = 1 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -157,7 +132,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             Integer thread = object.get("post").getAsInt();
             try {
-                String query = "UPDATE Post SET isDeleted = 0 WHERE id = ?";
+                String query = "UPDATE " + tableName + " SET isDeleted = 0 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -180,7 +155,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
             String message = object.get("message").getAsString();
             post = object.get("post").getAsInt();
 
-            String query = "UPDATE Post SET message = ? WHERE id = ?";
+            String query = "UPDATE " + tableName + " SET message = ? WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setString(1, message);
                 stmt.setInt(2, post);
@@ -205,15 +180,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
             post = object.get("post").getAsInt();
 
             String column = vote == 1 ? "likes" : "dislikes";
-            String query = "UPDATE Post SET " + column + " = " + column +  "+1 WHERE id = ?";
-            try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                stmt.setInt(1, post);
-
-                stmt.executeUpdate();
-            } catch (SQLException e) {
-                return handeSQLException(e);
-            }
-            query = "UPDATE Post SET points=likes-dislikes WHERE id=?";
+            String query = "UPDATE " + tableName + " SET " + column + " = " + column +  "+1 WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, post);
 
