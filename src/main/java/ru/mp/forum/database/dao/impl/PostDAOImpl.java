@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mysql.jdbc.Statement;
+import com.sun.org.glassfish.gmbal.Description;
 import ru.mp.forum.controllers.response.Status;
 import ru.mp.forum.database.dao.PostDAO;
 import ru.mp.forum.database.dao.impl.reply.Reply;
@@ -30,7 +31,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
         try {
             post = new PostDataSet(new JsonParser().parse(data).getAsJsonObject());
 
-            String query = "INSERT INTO " + tableName + " (date, thread_id, forum_short_name, user_email, message, m_path, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
+            String query = "INSERT INTO " + tableName + " (date, thread_id, forum_short_name, user_email, message, parent, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
             try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, post.getDate());
                 stmt.setInt(2, (Integer)post.getThread());
@@ -50,10 +51,6 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
                 try (ResultSet resultSet = stmt.getGeneratedKeys()) {
                     resultSet.next();
                     post.setId(resultSet.getInt(1));
-
-                    if (stmt.getUpdateCount() > 0 && !post.getIsDeleted()) {
-                        updateThread(true, (Integer)post.getId());
-                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -115,14 +112,10 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             Integer post = object.get("post").getAsInt();
             try {
-                String query = "UPDATE " + tableName + " SET isDeleted = 1 WHERE id = ? AND isDeleted = 0";
+                String query = "UPDATE " + tableName + " SET isDeleted = 1 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, post);
                     stmt.executeUpdate();
-
-                    if (stmt.getUpdateCount() > 0) {
-                        updateThread(false, post);
-                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -140,14 +133,10 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
             Integer post = object.get("post").getAsInt();
             try {
-                String query = "UPDATE " + tableName + " SET isDeleted = 0 WHERE id = ? AND isDeleted = 1";
+                String query = "UPDATE " + tableName + " SET isDeleted = 0 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, post);
                     stmt.executeUpdate();
-
-                    if (stmt.getUpdateCount() > 0) {
-                        updateThread(true, post);
-                    }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
@@ -206,6 +195,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
         return new Reply(Status.OK, details(post, null).getObject());
     }
 
+    @Deprecated
     private void updateThread(boolean inc, int id) {
         try {
             String operation = inc ? "+" : "-";
@@ -220,6 +210,42 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Deprecated
+    private void updatePath(PostDataSet post) {
+        String materializedPath = "";
+
+        String query = "SELECT m_path FROM " + tableName + " WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, (post.getParent() == null ? 0 : post.getParent()));
+
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (resultSet.next()) {
+                    materializedPath = resultSet.getString("m_path");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        materializedPath += "/";
+        materializedPath += Integer.toString(post.getId(), 36);
+
+        query = "UPDATE "+tableName+" SET m_path = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, materializedPath);
+            stmt.setInt(2, post.getId());
+
+            stmt.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

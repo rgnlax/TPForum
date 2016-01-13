@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Created by maksim on 08.01.16.
@@ -100,36 +101,69 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
         ArrayList<PostDataSet> posts = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append("SELECT * FROM Post");
-            query.append(" WHERE thread_id = ?");
-            if (since != null) {
-                query.append(" AND date >= '" + since + "'");
-            }
-            if (order != null) {
-                query.append(" ORDER BY date ");
-                switch (order) {
-                    case "asc": query.append(" ASC"); break;
-                    case "desc": query.append(" DESC"); break;
-                    default: query.append(" DESC");
+
+            if (sort == null || Objects.equals("flat", sort)) {
+                query.append("SELECT * FROM Post");
+                query.append(" WHERE thread_id = ?");
+                if (since != null) {
+                    query.append(" AND date >= '" + since + "'");
+                }
+                if (order != null) {
+                    query.append(" ORDER BY date ");
+                    switch (order) {
+                        case "asc":
+                            query.append(" ASC");
+                            break;
+                        case "desc":
+                            query.append(" DESC");
+                            break;
+                        default:
+                            query.append(" DESC");
+                    }
+                } else {
+                    query.append(" ORDER BY date DESC");
+                }
+                if (limit != null) {
+                    query.append(" LIMIT " + limit);
                 }
             } else {
-                query.append(" ORDER BY date DESC");
-            }
-            if (limit != null) {
-                query.append(" LIMIT " + limit);
+                query.append("SELECT * FROM Post");
+                query.append(" WHERE thread_id = ?");
+                if (order != null) {
+                    query.append(" ORDER BY r_path");
+                    switch (order) {
+                        case "asc":
+                            query.append(" ASC, m_path");
+                            break;
+                        case "desc":
+                            query.append(" DESC, m_path");
+                            break;
+                        default:
+                            query.append(" DESC, m_path");
+                    }
+                } else {
+                    query.append(" ORDER BY r_path DESC, m_path");
+                }
+                if (Objects.equals("tree", sort)) {
+                    query.append(" LIMIT " + limit);
+                }
             }
             try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
                 stmt.setInt(1, threadId);
-                try (ResultSet resultSet = stmt.executeQuery()) {
-                    while (resultSet.next()) {
-                        PostDataSet post = new PostDataSet(resultSet);
 
-                        posts.add(post);
+                boolean parent_tree = Objects.equals("parent_tree", sort);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    while (resultSet.next() && limit >= 0) {
+                        if (resultSet.getObject("parent") == null && parent_tree && --limit < 0) {
+                            break;
+                        }
+                        posts.add(new PostDataSet(resultSet));
                     }
                 }
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
+
         } catch (Exception e) {
             return new Reply(Status.INVALID_REQUEST);
         }
@@ -225,7 +259,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                String query = "UPDATE  "+ tableName+ "  SET isDeleted = 1, posts = 0 WHERE id = ?";
+                String query = "UPDATE  "+ tableName+ "  SET isDeleted = 1 WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
                     stmt.execute();
@@ -251,20 +285,16 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
             Integer thread = object.get("thread").getAsInt();
             try {
-                int count = 0;
                 String query = "UPDATE Post SET isDeleted = 0 WHERE thread_id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
                     stmt.setInt(1, thread);
-                    count = stmt.executeUpdate();
+                    stmt.executeUpdate();
                 }
-
-                query = "UPDATE  "+ tableName+"  SET isDeleted = 0, posts = ?  WHERE id = ?";
+                query = "UPDATE  "+ tableName+"  SET isDeleted = 0  WHERE id = ?";
                 try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                    stmt.setInt(1, count);
-                    stmt.setInt(2, thread);
+                    stmt.setInt(1, thread);
                     stmt.execute();
                 }
-
             } catch (SQLException e) {
                 return handeSQLException(e);
             }

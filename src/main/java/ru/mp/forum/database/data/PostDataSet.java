@@ -15,6 +15,7 @@ public class PostDataSet {
     private Object user;
     private final String message;
     private Integer parent;
+    private String m_path;
     private final boolean isEdited;
     private final boolean isApproved;
     private final boolean isHighlighted;
@@ -23,7 +24,7 @@ public class PostDataSet {
     private final int likes;
     private final int dislikes;
 
-    public PostDataSet(int id, String date, int thread, String forum, String user, String message, Integer parent, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, boolean isDeleted, int likes, int dislikes) {
+    public PostDataSet(int id, String date, int thread, String forum, String user, String message, Integer parent, String m_path, boolean isEdited, boolean isApproved, boolean isHighlighted, boolean isSpam, boolean isDeleted, int likes, int dislikes) {
         this.id = id;
         this.date = date;
         this.thread = thread;
@@ -31,6 +32,7 @@ public class PostDataSet {
         this.user = user;
         this.message = message;
         this.parent = parent;
+        this.m_path = m_path;
         this.isEdited = isEdited;
         this.isApproved = isApproved;
         this.isHighlighted = isHighlighted;
@@ -41,14 +43,15 @@ public class PostDataSet {
     }
 
     public PostDataSet(ResultSet resultSet) throws Exception {
-        this (
+        this(
                 resultSet.getInt("id"),
-                resultSet.getString("date").substring(0,19),
+                resultSet.getString("date").substring(0, 19),
                 resultSet.getInt("thread_id"),
                 resultSet.getString("forum_short_name"),
                 resultSet.getString("user_email"),
                 resultSet.getString("message"),
-                resultSet.getInt("m_path"),
+                resultSet.getInt("parent"),
+                resultSet.getString("m_path"),
                 resultSet.getBoolean("isEdited"),
                 resultSet.getBoolean("isApproved"),
                 resultSet.getBoolean("isHighlighted"),
@@ -57,7 +60,6 @@ public class PostDataSet {
                 resultSet.getInt("likes"),
                 resultSet.getInt("dislikes")
         );
-        //Kostyl
         if (parent == 0) {
             parent = null;
         }
@@ -140,9 +142,13 @@ public class PostDataSet {
         return dislikes;
     }
 
-    public int getPoints() { return likes - dislikes; }
+    public int getPoints() {
+        return likes - dislikes;
+    }
 
-    public Object getForum() { return forum; }
+    public Object getForum() {
+        return forum;
+    }
 
     public void setId(int id) {
         this.id = id;
@@ -159,8 +165,6 @@ public class PostDataSet {
     public void setUser(Object user) {
         this.user = user;
     }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
 }
+
+
