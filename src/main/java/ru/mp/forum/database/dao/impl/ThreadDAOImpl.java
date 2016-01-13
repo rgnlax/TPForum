@@ -152,6 +152,8 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
                 stmt.setInt(1, threadId);
 
                 boolean parent_tree = Objects.equals("parent_tree", sort);
+                limit = limit == null ? 0 : limit;
+
                 try (ResultSet resultSet = stmt.executeQuery()) {
                     while (resultSet.next() && limit >= 0) {
                         if (resultSet.getObject("parent") == null && parent_tree && --limit < 0) {
@@ -216,6 +218,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
         ArrayList<ThreadDataSet> thread = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
+
             query.append("SELECT * FROM Thread");
             query.append(" WHERE forum_short_name = ?");
             if (since != null) {
