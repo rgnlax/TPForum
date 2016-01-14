@@ -19,7 +19,7 @@ public abstract class BaseDAOImpl implements BaseDAO {
         try {
             String query = "SELECT COUNT(*) FROM " + tableName;
             if (tableName == "Thread" || tableName == "Post") {
-                query += " AND isDeleted = false";
+                query += " WHERE isDeleted = false";
             }
             return TExecutor.execQuery(connection, query, resultSet -> {
                 resultSet.next();

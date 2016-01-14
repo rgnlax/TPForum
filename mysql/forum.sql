@@ -35,7 +35,7 @@ CREATE TABLE `Forum` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `fk_forum_creator_idx` (`user_email`),
   CONSTRAINT `fk_forum_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=203 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=304 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,13 +69,14 @@ CREATE TABLE `Post` (
   KEY `fk_post_forum_idx` (`forum_short_name`),
   KEY `fk_post_creator_idx` (`user_email`),
   KEY `fk_post_thread_idx` (`thread_id`),
-  KEY `parent_idx` (`thread_id`,`r_path`),
   KEY `fs_date` (`forum_short_name`,`date`),
   KEY `fs_name_id_email` (`forum_short_name`,`user_name`,`user_id`,`user_email`),
+  KEY `deleted` (`isDeleted`),
+  KEY `parent_idx` (`thread_id`,`r_path`,`m_path`),
   CONSTRAINT `fk_post_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_post_forum` FOREIGN KEY (`forum_short_name`) REFERENCES `Forum` (`short_name`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_thread` FOREIGN KEY (`thread_id`) REFERENCES `Thread` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=1000260 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1000455 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -181,9 +182,10 @@ CREATE TABLE `Thread` (
   PRIMARY KEY (`id`),
   KEY `forum_date` (`forum_short_name`,`date`),
   KEY `user_date` (`user_email`,`date`),
+  KEY `deleted` (`isDeleted`),
   CONSTRAINT `fk_thread_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_thread_forum` FOREIGN KEY (`forum_short_name`) REFERENCES `Forum` (`short_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=10237 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=10414 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -202,9 +204,8 @@ CREATE TABLE `User` (
   `isAnonymous` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`email`),
   UNIQUE KEY `email_UNIQUE` (`email`),
-  UNIQUE KEY `id_UNIQUE` (`id`),
-  KEY `email_name` (`id`,`name`,`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=100238 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `id_UNIQUE` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=100359 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -272,4 +273,4 @@ CREATE TABLE `User_subscribes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-01-14 18:26:53
+-- Dump completed on 2016-01-15  0:01:50
