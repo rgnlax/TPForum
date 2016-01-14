@@ -186,15 +186,33 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
         ArrayList<UserDataSet> users = new ArrayList<>();
         try {
             StringBuilder query = new StringBuilder();
-            query.append(" SELECT DISTINCT U.*,group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n");
-            query.append(" FROM Post as P INNER JOIN User as U on U.email = P.user_email\n");
-            query.append(" LEFT JOIN User_followers JUF ON P.user_email = JUF.user_email\n");
-            query.append(" LEFT JOIN User_followers JUF1 ON P.user_email = JUF1.followee_email\n");
-            query.append(" LEFT JOIN User_subscribes JUS ON P.user_email= JUS.user_email\n");
-            query.append(" WHERE P.forum_short_name = ?");
+            query.append(" SELECT DISTINCT U.*,group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n FROM");
+            query.append(" (SELECT DISTINCT user_email FROM Post WHERE forum_short_name = ?");
             if (sinceId != null) {
-                query.append(" AND U.id >= " + sinceId);
+                query.append(" AND user_id >= " + sinceId);
             }
+            if (order != null) {
+                query.append(" ORDER BY user_name ");
+                switch (order) {
+                    case "asc": query.append("ASC"); break;
+                    case "desc": query.append("DESC"); break;
+                    default: query.append("DESC");
+                }
+            } else {
+                query.append(" ORDER BY user_name DESC");
+            }
+
+            if (limit != null) {
+                 query.append(" LIMIT "+ limit +") as T\n");
+            } else {
+                query.append(") as T\n");
+            }
+
+            query.append("  INNER JOIN User as U on U.email = T.user_email\n");
+            query.append(" LEFT JOIN User_followers JUF ON email = JUF.user_email\n");
+            query.append(" LEFT JOIN User_followers JUF1 ON email = JUF1.followee_email\n");
+            query.append(" LEFT JOIN User_subscribes JUS ON email= JUS.user_email\n");
+
             query.append(" group by U.id");
             if (order != null) {
                 query.append(" ORDER BY U.name ");
@@ -206,9 +224,7 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
             } else {
                 query.append(" ORDER BY U.name DESC");
             }
-            if (limit != null) {
-                query.append(" LIMIT " + limit);
-            }
+
             try(PreparedStatement stmt = connection.prepareStatement(query.toString())) {
                 stmt.setString(1, forum);
                 try (ResultSet resultSet = stmt.executeQuery()) {
