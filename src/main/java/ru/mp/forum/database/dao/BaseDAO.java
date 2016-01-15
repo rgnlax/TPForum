@@ -1,7 +1,5 @@
 package ru.mp.forum.database.dao;
 
-import java.sql.Connection;
-
 /**
  * Created by maksim on 09.01.16.
  */

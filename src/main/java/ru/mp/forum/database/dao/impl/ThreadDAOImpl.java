@@ -64,9 +64,8 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     public Reply details(int threadId, String[] related) {
         ThreadDataSet thread;
         try {
-            String query = "SELECT  "+ tableName+".*, count(Post.id) as posts FROM  "+ tableName+"  \n" +
-                    "INNER JOIN Post on Post.thread_id =  "+ tableName+" .id\n" +
-                    "WHERE  "+ tableName+" .id = ? AND Post.isDeleted = false";
+            String query = "SELECT * FROM  "+ tableName+"  \n" +
+                    "WHERE  "+ tableName+" .id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, threadId);
 

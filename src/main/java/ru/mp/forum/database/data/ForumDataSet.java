@@ -3,7 +3,6 @@ package ru.mp.forum.database.data;
 import com.google.gson.JsonObject;
 
 import java.sql.ResultSet;
-import java.util.Objects;
 
 /**
  * Created by maksim on 08.01.16.

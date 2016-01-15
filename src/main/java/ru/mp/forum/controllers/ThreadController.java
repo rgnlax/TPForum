@@ -1,6 +1,5 @@
 package ru.mp.forum.controllers;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import org.springframework.web.bind.annotation.*;
 import ru.mp.forum.controllers.response.RestResponse;
 import ru.mp.forum.database.dao.ThreadDAO;

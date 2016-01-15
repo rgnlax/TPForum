@@ -10,7 +10,6 @@ import ru.mp.forum.database.data.UserDataSet;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Created by maksim on 08.01.16.
