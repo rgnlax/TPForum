@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
-import java.sql.Connection;
+import javax.sql.DataSource;
 
 /**
  * Created by maksim on 09.01.16.
@@ -15,7 +15,7 @@ public abstract class BaseRestController {
      * MySQL database connection object
      */
     @Autowired
-    protected Connection con;
+    protected DataSource dataSource;
 
     @PostConstruct
     void init() {

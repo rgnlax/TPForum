@@ -17,7 +17,7 @@ public class ForumController extends BaseRestController {
     void init() {
         super.init();
 
-        forumDAO = new ForumDAOImpl(con);
+        forumDAO = new ForumDAOImpl(dataSource);
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)

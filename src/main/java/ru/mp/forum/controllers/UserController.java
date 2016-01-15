@@ -18,7 +18,7 @@ public class UserController extends BaseRestController {
     void init() {
         super.init();
 
-        userDAO = new UserDAOImpl(con);
+        userDAO = new UserDAOImpl(dataSource);
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)

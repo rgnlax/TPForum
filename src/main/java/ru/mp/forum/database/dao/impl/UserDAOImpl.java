@@ -8,6 +8,7 @@ import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.UserDataSet;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -16,15 +17,15 @@ import java.util.ArrayList;
  */
 public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
 
-    public UserDAOImpl(Connection connection) {
+    public UserDAOImpl(DataSource dataSource) {
         this.tableName = "User";
-        this.connection = connection;
+        this.dataSource = dataSource;
     }
 
     @Override
     public Reply create(String data) {
         UserDataSet user;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             user = new UserDataSet(new JsonParser().parse(data).getAsJsonObject());
 
             String query = "INSERT INTO " + tableName + " (username, about, name, email, isAnonymous) VALUES (?,?,?,?,?)";
@@ -54,21 +55,23 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply details(String email) {
         UserDataSet user;
-        String query = "SELECT U.*, group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n" +
-                "FROM User U \n" +
-                "LEFT JOIN User_followers JUF ON U.email = JUF.user_email\n" +
-                "LEFT JOIN User_followers JUF1 ON U.email = JUF1.followee_email\n" +
-                "LEFT JOIN User_subscribes JUS ON U.email= JUS.user_email\n" +
-                "WHERE U.email = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, email);
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                resultSet.next();
+        try (Connection connection = dataSource.getConnection()) {
+            String query = "SELECT U.*, group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n" +
+                    "FROM User U \n" +
+                    "LEFT JOIN User_followers JUF ON U.email = JUF.user_email\n" +
+                    "LEFT JOIN User_followers JUF1 ON U.email = JUF1.followee_email\n" +
+                    "LEFT JOIN User_subscribes JUS ON U.email= JUS.user_email\n" +
+                    "WHERE U.email = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, email);
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    resultSet.next();
 
-                user = new UserDataSet(resultSet);
+                    user = new UserDataSet(resultSet);
 
-            } catch (Exception e) {
-                return new Reply(Status.NOT_FOUND);
+                } catch (Exception e) {
+                    return new Reply(Status.NOT_FOUND);
+                }
             }
         } catch (SQLException e) {
             return new Reply(Status.INCORRECT_REQUEST);
@@ -79,7 +82,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply follow(String data) {
         String follower;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
             follower = object.get("follower").getAsString();
             String followee = object.get("followee").getAsString();
@@ -103,7 +106,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply unfollow(String data) {
         String follower;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
             follower = object.get("follower").getAsString();
             String followee = object.get("followee").getAsString();
@@ -127,7 +130,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply listFollowers(String email, Integer limit, String order, Integer sinceId) {
         ArrayList<UserDataSet> followers = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
             query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscribes\n" );
             query.append("from User_followers as UF\n");
@@ -184,7 +187,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply listFollowing(String email, Integer limit, String order, Integer sinceId) {
         ArrayList<UserDataSet> followers = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
             query.append("select U.*, group_concat(distinct JUF.user_email) as followers, group_concat(distinct JUF1.followee_email) as following, group_concat(distinct JUS.thread_id) as subscribes\n" );
             query.append("from User_followers as UF\n");
@@ -241,7 +244,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply listPosts(String email, Integer limit, String order, String since) {
         ArrayList<PostDataSet> posts = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
             query.append("SELECT * FROM Post");
             query.append(" WHERE user_email = ?");
@@ -282,7 +285,7 @@ public class UserDAOImpl extends BaseDAOImpl implements UserDAO {
     @Override
     public Reply updateProfile(String data) {
         String email;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             //Required fields

@@ -9,6 +9,7 @@ import ru.mp.forum.database.dao.PostDAO;
 import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,15 +20,15 @@ import java.util.Arrays;
  * Created by maksim on 08.01.16.
  */
 public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
-    public PostDAOImpl(Connection connection) {
+    public PostDAOImpl(DataSource dataSource) {
         this.tableName = "Post";
-        this.connection = connection;
+        this.dataSource = dataSource;
     }
 
     @Override
     public Reply create(String data) {
         PostDataSet post;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             post = new PostDataSet(new JsonParser().parse(data).getAsJsonObject());
 
             String query = "INSERT INTO " + tableName + " (date, thread_id, forum_short_name, user_email, message, parent, isEdited, isApproved, isHighlighted, isDeleted, isSpam, likes, dislikes)  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);";
@@ -63,7 +64,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     @Override
     public Reply details(int postId, String[] related) {
         PostDataSet post;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "SELECT * FROM " + tableName + " WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setInt(1, postId);
@@ -76,37 +77,38 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
+
+            if (related != null) {
+                if (Arrays.asList(related).contains("user")) {
+                    post.setUser(new UserDAOImpl(dataSource).details(post.getUser().toString()).getObject());
+                }
+                if (Arrays.asList(related).contains("forum")) {
+                    post.setForum(new ForumDAOImpl(dataSource).details(post.getForum().toString(), null).getObject());
+                }
+                if (Arrays.asList(related).contains("thread")) {
+                    post.setThread(new ThreadDAOImpl(dataSource).details(Integer.parseInt(post.getThread().toString()), null).getObject());
+                }
+            }
         } catch (Exception e) {
             return new Reply(Status.INVALID_REQUEST);
         }
 
-        if (related != null) {
-            if (Arrays.asList(related).contains("user")) {
-                post.setUser(new UserDAOImpl(connection).details(post.getUser().toString()).getObject());
-            }
-            if (Arrays.asList(related).contains("forum")) {
-                post.setForum(new ForumDAOImpl(connection).details(post.getForum().toString(), null).getObject());
-            }
-            if (Arrays.asList(related).contains("thread")) {
-                post.setThread(new ThreadDAOImpl(connection).details(Integer.parseInt(post.getThread().toString()), null).getObject());
-            }
-        }
         return new Reply(Status.OK, post);
     }
 
     @Override
     public Reply listForumPosts(String forum, String since, Integer limit, String order) {
-        return new ForumDAOImpl(connection).listPosts(forum, since, limit, order, null);
+        return new ForumDAOImpl(dataSource).listPosts(forum, since, limit, order, null);
     }
 
     @Override
     public Reply listThreadPosts(int threadId, String since, Integer limit, String order) {
-        return new ThreadDAOImpl(connection).listPosts(threadId, since, limit, null, order);
+        return new ThreadDAOImpl(dataSource).listPosts(threadId, since, limit, null, order);
     }
 
     @Override
     public Reply remove(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer post = object.get("post").getAsInt();
@@ -127,7 +129,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
     @Override
     public Reply restore(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer post = object.get("post").getAsInt();
@@ -149,7 +151,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     @Override
     public Reply update(String data) {
         Integer post;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             String message = object.get("message").getAsString();
@@ -173,7 +175,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
     @Override
     public Reply vote(String data) {
         Integer post;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer vote = object.get("vote").getAsInt();
@@ -196,7 +198,7 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
 
     @Deprecated
     private void updateThread(boolean inc, int id) {
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             String operation = inc ? "+" : "-";
             String query = "UPDATE Thread SET posts=posts "+ operation +" 1 WHERE id = (SELECT thread_id FROM Post WHERE Post.id = ?)";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -216,31 +218,32 @@ public class PostDAOImpl extends BaseDAOImpl implements PostDAO {
         String materializedPath = "";
 
         String query = "SELECT m_path FROM " + tableName + " WHERE id = ?";
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setInt(1, (post.getParent() == null ? 0 : post.getParent()));
 
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, (post.getParent() == null ? 0 : post.getParent()));
-
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                if (resultSet.next()) {
-                    materializedPath = resultSet.getString("m_path");
+                try (ResultSet resultSet = stmt.executeQuery()) {
+                    if (resultSet.next()) {
+                        materializedPath = resultSet.getString("m_path");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        materializedPath += "/";
-        materializedPath += Integer.toString(post.getId(), 36);
+            materializedPath += "/";
+            materializedPath += Integer.toString(post.getId(), 36);
 
-        query = "UPDATE "+tableName+" SET m_path = ? WHERE id = ?";
+            query = "UPDATE "+tableName+" SET m_path = ? WHERE id = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, materializedPath);
-            stmt.setInt(2, post.getId());
+            try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, materializedPath);
+                stmt.setInt(2, post.getId());
 
-            stmt.execute();
+                stmt.execute();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

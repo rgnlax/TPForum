@@ -1,47 +1,52 @@
 package ru.mp.forum.database;
 
-import com.mysql.jdbc.CommunicationsException;
-import com.mysql.jdbc.Driver;
+import org.apache.commons.dbcp.ConnectionFactory;
+import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp.PoolableConnectionFactory;
+import org.apache.commons.dbcp.PoolingDataSource;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 /**
  * Created by maksim on 08.01.16.
  */
 @Configuration
 public class DatabaseHelper {
-    private static Connection connection;
+    private static DataSource dataSource;
 
     @Bean
-    public Connection getConnection() {
-        if (connection != null) {
-            return connection;
+    public DataSource getDataSource() {
+        if (dataSource != null) {
+            return dataSource;
         }
 
         try {
-            DriverManager.registerDriver((Driver) Class.forName("com.mysql.jdbc.Driver").newInstance());
-
-            StringBuilder builder = new StringBuilder();
-            builder.append("jdbc:mysql://localhost:3306/");
-            builder.append("forum?");
-            builder.append("user=f_usr&");
-            builder.append("password=secret&");
-            builder.append("useUnicode=true&characterEncoding=utf8&autoReconnect=true");
-
-            connection = DriverManager.getConnection(builder.toString());
-
-            return connection;
-        } catch (CommunicationsException e) {
-            System.out.println("Communication error. Check MySQL Server state.");
-            e.printStackTrace();
-        } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            System.out.println("Connection error. Check database configuration.");
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return null;
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("jdbc:mysql://localhost:3306/");
+        builder.append("forum?");
+        builder.append("useUnicode=true&characterEncoding=utf8&autoReconnect=true");
+
+        GenericObjectPool genericObjectPool = new GenericObjectPool();
+        genericObjectPool.setMaxActive(100);
+
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+                builder.toString(),
+                "f_usr",
+                "secret");
+
+        PoolableConnectionFactory poolableConnectionFactory =
+                new PoolableConnectionFactory(connectionFactory, genericObjectPool,
+                        null, null, false, true);
+
+        dataSource = new PoolingDataSource(genericObjectPool);
+        return dataSource;
     }
 }

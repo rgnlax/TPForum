@@ -10,6 +10,7 @@ import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.ThreadDataSet;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,15 +24,15 @@ import java.util.Objects;
  */
 public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
-    public ThreadDAOImpl(Connection connection) {
+    public ThreadDAOImpl(DataSource dataSource) {
         this.tableName = "Thread";
-        this.connection = connection;
+        this.dataSource = dataSource;
     }
 
     @Override
     public Reply create(String jsonString) {
         ThreadDataSet thread;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             thread = new ThreadDataSet(new JsonParser().parse(jsonString).getAsJsonObject());
 
             String query = "INSERT INTO  "+ tableName+"  (forum_short_name, title, isClosed, user_email, date, message, slug, isDeleted) VALUES (?,?,?,?,?,?,?,?);";
@@ -63,7 +64,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply details(int threadId, String[] related) {
         ThreadDataSet thread;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "SELECT * FROM  "+ tableName+"  \n" +
                     "WHERE  "+ tableName+" .id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -77,20 +78,20 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
+
+            if (related != null) {
+                if (Arrays.asList(related).contains("user")) {
+                    thread.setUser(new UserDAOImpl(dataSource).details(thread.getUser().toString()).getObject());
+                }
+                if (Arrays.asList(related).contains("forum")) {
+                    thread.setForum(new ForumDAOImpl(dataSource).details(thread.getForum().toString(), null).getObject());
+                }
+                if (Arrays.asList(related).contains("thread")) {
+                    return new Reply(Status.INCORRECT_REQUEST);
+                }
+            }
         } catch (Exception e) {
             return new Reply(Status.INVALID_REQUEST);
-        }
-
-        if (related != null) {
-            if (Arrays.asList(related).contains("user")) {
-                thread.setUser(new UserDAOImpl(connection).details(thread.getUser().toString()).getObject());
-            }
-            if (Arrays.asList(related).contains("forum")) {
-                thread.setForum(new ForumDAOImpl(connection).details(thread.getForum().toString(), null).getObject());
-            }
-            if (Arrays.asList(related).contains("thread")) {
-                return new Reply(Status.INCORRECT_REQUEST);
-            }
         }
         return new Reply(Status.OK, thread);
     }
@@ -98,7 +99,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply listPosts(int threadId, String since, Integer limit, String sort, String order) {
         ArrayList<PostDataSet> posts = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
 
             if (sort == null || Objects.equals("flat", sort)) {
@@ -174,7 +175,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply listUserThreads(String user, String since, Integer limit, String order) {
         ArrayList<ThreadDataSet> thread = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
             query.append("SELECT * FROM Thread");
             query.append(" WHERE user_email = ?");
@@ -215,7 +216,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply listForumThreads(String forum, String since, Integer limit, String order) {
         ArrayList<ThreadDataSet> thread = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             StringBuilder query = new StringBuilder();
 
             query.append("SELECT * FROM Thread");
@@ -256,7 +257,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply remove(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer thread = object.get("thread").getAsInt();
@@ -282,7 +283,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply restore(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer thread = object.get("thread").getAsInt();
@@ -309,7 +310,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply update(String data) {
         Integer thread;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             String message = object.get("message").getAsString();
@@ -335,7 +336,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
     @Override
     public Reply vote(String data) {
         Integer thread;
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer vote = object.get("vote").getAsInt();
@@ -358,7 +359,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply subscribe(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             String user = object.get("user").getAsString();
@@ -382,7 +383,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply unsubscribe(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             String user = object.get("user").getAsString();
@@ -406,7 +407,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply open(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer thread = object.get("thread").getAsInt();
@@ -427,7 +428,7 @@ public class ThreadDAOImpl extends BaseDAOImpl implements ThreadDAO {
 
     @Override
     public Reply close(String data) {
-        try {
+        try (Connection connection = dataSource.getConnection())  {
             JsonObject object = new JsonParser().parse(data).getAsJsonObject();
 
             Integer thread = object.get("thread").getAsInt();

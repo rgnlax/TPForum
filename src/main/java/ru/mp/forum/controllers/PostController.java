@@ -14,7 +14,7 @@ public class PostController extends BaseRestController {
     private PostDAO postDAO;
 
     void init() {
-        postDAO = new PostDAOImpl(con);
+        postDAO = new PostDAOImpl(dataSource);
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)

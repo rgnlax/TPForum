@@ -10,6 +10,7 @@ import ru.mp.forum.database.data.PostDataSet;
 import ru.mp.forum.database.data.ThreadDataSet;
 import ru.mp.forum.database.data.UserDataSet;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,15 +23,15 @@ import java.util.Arrays;
  */
 public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
 
-    public ForumDAOImpl(Connection connection) {
+    public ForumDAOImpl(DataSource dataSource) {
         this.tableName = "Forum";
-        this.connection = connection;
+        this.dataSource = dataSource;
     }
 
     @Override
     public Reply create(String jsonString) {
         ForumDataSet forum;
-        try {
+        try (Connection connection = dataSource.getConnection()){
             forum = new ForumDataSet(new JsonParser().parse(jsonString).getAsJsonObject());
 
             String query = "INSERT INTO "+ tableName +" (name, short_name, user_email) VALUES (?, ?, ?)";
@@ -57,7 +58,7 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
     @Override
     public Reply details(String slug, String[] related) {
         ForumDataSet forum;
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "SELECT * FROM "+ tableName +" WHERE short_name = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setString(1, slug);
@@ -70,22 +71,22 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
             } catch (SQLException e) {
                 return handeSQLException(e);
             }
+            if (related != null) {
+                if (Arrays.asList(related).contains("user")) {
+                    forum.setUser(new UserDAOImpl(dataSource).details(forum.getUser().toString()).getObject());
+                }
+            }
         } catch (Exception e) {
             return new Reply(Status.INVALID_REQUEST);
         }
 
-        if (related != null) {
-            if (Arrays.asList(related).contains("user")) {
-                forum.setUser(new UserDAOImpl(connection).details(forum.getUser().toString()).getObject());
-            }
-        }
         return new Reply(Status.OK, forum);
     }
 
     @Override
     public Reply listPosts(String forum, String since, Integer limit, String order, String[] related) {
         ArrayList<PostDataSet> posts = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             StringBuilder query = new StringBuilder();
             query.append("SELECT * FROM Post");
             query.append(" WHERE forum_short_name = ?");
@@ -112,13 +113,13 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
                         PostDataSet post = new PostDataSet(resultSet);
                         if (related != null) {
                             if (Arrays.asList(related).contains("user")) {
-                                post.setUser(new UserDAOImpl(connection).details(post.getUser().toString()).getObject());
+                                post.setUser(new UserDAOImpl(dataSource).details(post.getUser().toString()).getObject());
                             }
                             if (Arrays.asList(related).contains("forum")) {
-                                post.setForum(new ForumDAOImpl(connection).details(post.getForum().toString(), null).getObject());
+                                post.setForum(new ForumDAOImpl(dataSource).details(post.getForum().toString(), null).getObject());
                             }
                             if (Arrays.asList(related).contains("thread")) {
-                                post.setThread(new ThreadDAOImpl(connection).details(Integer.parseInt(post.getThread().toString()), null).getObject());
+                                post.setThread(new ThreadDAOImpl(dataSource).details(Integer.parseInt(post.getThread().toString()), null).getObject());
                             }
                         }
                         posts.add(post);
@@ -136,7 +137,7 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
     @Override
     public Reply listThreads(String forum, String since, Integer limit, String order, String[] related) {
         ArrayList<ThreadDataSet> threads = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             StringBuilder query = new StringBuilder();
             query.append("SELECT * FROM Thread");
             query.append(" WHERE forum_short_name = ?");
@@ -163,10 +164,10 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
                         ThreadDataSet thread = new ThreadDataSet(resultSet);
                         if (related != null) {
                             if (Arrays.asList(related).contains("user")) {
-                                thread.setUser(new UserDAOImpl(connection).details(thread.getUser().toString()).getObject());
+                                thread.setUser(new UserDAOImpl(dataSource).details(thread.getUser().toString()).getObject());
                             }
                             if (Arrays.asList(related).contains("forum")) {
-                                thread.setForum(new ForumDAOImpl(connection).details(thread.getForum().toString(), null).getObject());
+                                thread.setForum(new ForumDAOImpl(dataSource).details(thread.getForum().toString(), null).getObject());
                             }
                         }
                         threads.add(thread);
@@ -184,7 +185,7 @@ public class ForumDAOImpl extends BaseDAOImpl implements ForumDAO {
     @Override
     public Reply listUsers(String forum, Integer sinceId, Integer limit, String order) {
         ArrayList<UserDataSet> users = new ArrayList<>();
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             StringBuilder query = new StringBuilder();
             query.append(" SELECT DISTINCT U.*,group_concat(distinct JUF.followee_email) as following, group_concat(distinct JUF1.user_email) as followers, group_concat(distinct JUS.thread_id) as subscribes\n FROM");
             query.append(" (SELECT DISTINCT user_email FROM Post WHERE forum_short_name = ?");

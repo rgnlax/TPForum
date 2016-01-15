@@ -2,6 +2,7 @@ package ru.mp.forum.database.dao.impl;
 
 import ru.mp.forum.database.dao.*;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,20 +11,16 @@ import java.util.Map;
  * Created by maksim on 09.01.16.
  */
 public class MainDAOImpl implements MainDAO {
-    private final Connection con;
-
     private ForumDAO forumDAO;
     private UserDAO userDAO;
     private PostDAO postDAO;
     private ThreadDAO threadDAO;
 
-    public MainDAOImpl(Connection con) {
-        this.con = con;
-
-        userDAO = new UserDAOImpl(con);
-        forumDAO = new ForumDAOImpl(con);
-        threadDAO = new ThreadDAOImpl(con);
-        postDAO = new PostDAOImpl(con);
+    public MainDAOImpl(DataSource dataSource) {
+        userDAO = new UserDAOImpl(dataSource);
+        forumDAO = new ForumDAOImpl(dataSource);
+        threadDAO = new ThreadDAOImpl(dataSource);
+        postDAO = new PostDAOImpl(dataSource);
     }
 
     @Override

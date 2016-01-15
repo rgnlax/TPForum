@@ -5,6 +5,7 @@ import ru.mp.forum.database.dao.BaseDAO;
 import ru.mp.forum.database.dao.impl.reply.Reply;
 import ru.mp.forum.database.executor.TExecutor;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -13,11 +14,11 @@ import java.sql.SQLException;
  */
 public abstract class BaseDAOImpl implements BaseDAO {
     protected String tableName = "";
-    protected Connection connection;
+    protected DataSource dataSource;
 
     @Override
     public int getCount() {
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "SELECT COUNT(*) FROM " + tableName;
             if (tableName == "Thread" || tableName == "Post") {
                 query += " WHERE isDeleted = false";
@@ -26,7 +27,7 @@ public abstract class BaseDAOImpl implements BaseDAO {
                 resultSet.next();
                 return resultSet.getInt(1);
             });
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return 0;
@@ -34,7 +35,7 @@ public abstract class BaseDAOImpl implements BaseDAO {
 
     @Override
     public void truncateTable() {
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             TExecutor.execQuery(connection, "SET FOREIGN_KEY_CHECKS = 0;");
             TExecutor.execQuery(connection, "TRUNCATE TABLE " + tableName);
             if (tableName == "User") {
@@ -47,7 +48,6 @@ public abstract class BaseDAOImpl implements BaseDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     protected Reply handeSQLException(SQLException e) {

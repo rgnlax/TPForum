@@ -17,7 +17,7 @@ public class ThreadController extends BaseRestController {
     void init() {
         super.init();
 
-        threadDAO = new ThreadDAOImpl(con);
+        threadDAO = new ThreadDAOImpl(dataSource);
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)

@@ -19,7 +19,7 @@ public class MainController extends BaseRestController {
     void init() {
         super.init();
 
-        mainDAO = new MainDAOImpl(con);
+        mainDAO = new MainDAOImpl(dataSource);
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.GET)
