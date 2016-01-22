@@ -20,9 +20,9 @@ public abstract class BaseDAOImpl implements BaseDAO {
     public int getCount() {
         try (Connection connection = dataSource.getConnection()) {
             String query = "SELECT COUNT(*) FROM " + tableName;
-            if (tableName == "Thread" || tableName == "Post") {
+            /*if (tableName == "Thread" || tableName == "Post") {
                 query += " WHERE isDeleted = false";
-            }
+            }*/
             return TExecutor.execQuery(connection, query, resultSet -> {
                 resultSet.next();
                 return resultSet.getInt(1);

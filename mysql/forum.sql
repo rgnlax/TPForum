@@ -35,7 +35,7 @@ CREATE TABLE `Forum` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `fk_forum_creator_idx` (`user_email`),
   CONSTRAINT `fk_forum_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=729 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=782 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -66,16 +66,15 @@ CREATE TABLE `Post` (
   `user_id` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`),
-  KEY `fk_post_creator_idx` (`user_email`),
   KEY `fs_date` (`forum_short_name`,`date`),
   KEY `fs_name_id_email` (`forum_short_name`,`user_name`,`user_id`,`user_email`),
-  KEY `deleted` (`isDeleted`),
   KEY `parent_idx` (`thread_id`,`r_path`,`m_path`),
   KEY `thread_date` (`thread_id`,`date`),
+  KEY `user_date` (`user_email`,`date`),
   CONSTRAINT `fk_post_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_post_forum` FOREIGN KEY (`forum_short_name`) REFERENCES `Forum` (`short_name`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_thread` FOREIGN KEY (`thread_id`) REFERENCES `Thread` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=1001270 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1001346 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -96,15 +95,15 @@ BEGIN
 		SET @parent_path = (SELECT m_path FROM Post WHERE id = NEW.parent);
         SET @mat_path = concat(@parent_path, '/', conv(next_id,10, 36));
 		SET @root_path = substring_index(@mat_path, '/', 2);
-        
+
         SET NEW.m_path = @mat_path;
         SET NEW.r_path = @root_path;
     else
 		SET @path = concat("/", conv(next_id, 10, 36));
-        
+
         SET NEW.m_path = @path;
         SET NEW.r_path = @path;
-        
+
     END IF;
 	SELECT name, id FROM User WHERE email = NEW.user_email INTO user_name, user_id;
     SET NEW.user_name = user_name;
@@ -184,7 +183,7 @@ CREATE TABLE `Thread` (
   KEY `deleted` (`isDeleted`),
   CONSTRAINT `fk_thread_creator` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_thread_forum` FOREIGN KEY (`forum_short_name`) REFERENCES `Forum` (`short_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=11140 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11207 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -204,7 +203,7 @@ CREATE TABLE `User` (
   PRIMARY KEY (`email`),
   UNIQUE KEY `email_UNIQUE` (`email`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=100928 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=100994 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -272,4 +271,4 @@ CREATE TABLE `User_subscribes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-01-15 22:20:58
+-- Dump completed on 2016-01-22 18:10:44
